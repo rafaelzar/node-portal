@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import MainRouter from './MainRouter';
 import ErrorHandler from './errors/ErrorHandler';
 import cors from 'cors';
-import { validateJWT } from './middleware/validate-jwt';
+// import { validateJWT } from './middleware/validate-jwt';
 /**
  * Express server application class using singleton
  * @description tbd
@@ -31,7 +31,7 @@ class App {
      */
 
     // private routes go below here
-    this._app.use('/', validateJWT, this._router);
+    this._app.use('/', this._router);
 
     this._app.use((err: ErrorHandler, req: Request, res: Response, next: NextFunction) => {
       res.status(err.statusCode || 500).json({
