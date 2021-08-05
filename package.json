@@ -19,7 +19,7 @@
   },
   "homepage": "https://github.com/eyerate/backend#readme",
   "dependencies": {
-    "@types/eyerate": "ssh://git@github.com/eyerate/types",
+    "@types/eyerate": "ssh://git@github.com/deltakroneker/types",
     "@types/jwk-to-pem": "^2.0.1",
     "axios": "^0.21.1",
     "cors": "^2.8.5",
