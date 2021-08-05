@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon -r dotenv/config src/index.ts",
     "types": "yarn add ssh://git@github.com/eyerate/types",
-    "start": "tsc && node ./build/app.js"
+    "start": "tsc && node ./build/app.js",
+    "format": "prettier --write \"src/**/*.ts\" \"src/test/**/*.ts\""
   },
   "repository": {
     "type": "git",
