@@ -1,6 +1,12 @@
-import ErrorHandler from "../errors/ErrorHandler";
-import { Types } from "mongoose";
+import { NextFunction, Request, Response } from 'express';
 
-class EmployeesController {}
+class EmployeesController {
+  async here(req: Request, res: Response, next: NextFunction) {
+    try {
+    } catch (error) {
+      next(error);
+    }
+  }
+}
 
 export = new EmployeesController();

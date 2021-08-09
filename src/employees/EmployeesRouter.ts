@@ -1,5 +1,5 @@
-import { NextFunction, Request, Response, Router } from "express";
-import EmployeesController from "./EmployeesController";
+import { Router } from 'express';
+import EmployeesController from './EmployeesController';
 
 class EmployeesRouter {
   private _router = Router();
@@ -13,7 +13,9 @@ class EmployeesRouter {
     this._configure();
   }
 
-  private _configure() {}
+  private _configure() {
+    this._router.get('/here', this._controller.here);
+  }
 }
 
 export = new EmployeesRouter().router;
