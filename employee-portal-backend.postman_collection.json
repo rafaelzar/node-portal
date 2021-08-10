@@ -1,0 +1,70 @@
+{
+	"info": {
+		"_postman_id": "2f0a2864-be58-4c28-b88d-6c1b873110cc",
+		"name": "employee-portal-backend",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "get cognito user",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{eyerate_host}}/employees/validate-jwt",
+					"host": [
+						"{{eyerate_host}}"
+					],
+					"path": [
+						"employees",
+						"validate-jwt"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get BE status",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{eyerate_host}}/public",
+					"host": [
+						"{{eyerate_host}}"
+					],
+					"path": [
+						"public"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "eyerate_host",
+			"value": "employee-portal-backend-dev.herokuapp.com"
+		}
+	]
+}
