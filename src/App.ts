@@ -8,6 +8,14 @@ import cors from 'cors';
  * @description tbd
  */
 
+declare global {
+  namespace Express {
+    interface Request {
+      user?: Record<string, any>;
+    }
+  }
+}
+
 class App {
   private static _Instance: App;
   private static _port: number;
