@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { validateJWT } from '../middleware/validate-jwt';
 import EmployeesController from './EmployeesController';
 
 class EmployeesRouter {
@@ -14,7 +15,7 @@ class EmployeesRouter {
   }
 
   private _configure() {
-    this._router.get('/here', this._controller.here);
+    this._router.get('/validate-jwt', validateJWT, this._controller.validateJwt);
   }
 }
 
