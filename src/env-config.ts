@@ -36,7 +36,7 @@ export default {
   APP_PORT: Number(process.env.PORT),
 
   // mongo
-  APP_DB_URI: process.env.NODE_ENV === 'production' ? process.env.APP_DB_URI : process.env.APP_DB_URI_DEV,
+  APP_DB_URI: process.env.APP_DB_URI,
 
   // sendgrid
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
