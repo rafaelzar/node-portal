@@ -6,6 +6,8 @@ class EmployeesRouter {
   private _router = Router();
   private _controller = EmployeesController;
 
+  private validateJwt = this._controller.validateJwt.bind(this._controller);
+
   get router() {
     return this._router;
   }
@@ -15,7 +17,7 @@ class EmployeesRouter {
   }
 
   private _configure() {
-    this._router.get('/validate-jwt', validateJWT, this._controller.validateJwt);
+    this._router.get('/validate-jwt', validateJWT, this.validateJwt);
   }
 }
 

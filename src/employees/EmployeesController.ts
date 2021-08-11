@@ -9,18 +9,9 @@ class EmployeesController {
 
   async validateJwt(req: Request, res: Response, next: NextFunction) {
     try {
-      if (!req.user) throw new ErrorHandler(404, 'User not found by middleware');
-      res.status(202).send(req.user);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async findByEmail(email: string, next: NextFunction) {
-    try {
-      const user = await this.employeeModel.findOne({ email });
+      if (!req.user) throw new ErrorHandler(404, 'Cognito user not found');
+      const user = await this.employeeModel.findOne({ email: req.user.email });
       if (!user) throw new ErrorHandler(404, 'User not found');
-      return user;
     } catch (error) {
       next(error);
     }
