@@ -29,8 +29,8 @@ export const EmployeeSchema: Schema = new Schema(
       type: Boolean,
     },
   },
-  { collection: 'employees', timestamps: true },
+  { collection: 'Employees', timestamps: true },
 );
 
-const EmployeeModel = model<Employee>('Users', EmployeeSchema);
+const EmployeeModel = model<Employee>('Employees', EmployeeSchema);
 export default EmployeeModel;

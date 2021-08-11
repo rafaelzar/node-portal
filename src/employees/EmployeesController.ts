@@ -12,6 +12,7 @@ class EmployeesController {
       if (!req.user) throw new ErrorHandler(404, 'Cognito user not found');
       const user = await this.employeeModel.findOne({ email: req.user.email });
       if (!user) throw new ErrorHandler(404, 'User not found');
+      res.send(user);
     } catch (error) {
       next(error);
     }
