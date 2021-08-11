@@ -4,10 +4,9 @@ import ErrorHandler from '../errors/ErrorHandler';
 
 export const validateMongoId = (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (isValidObjectId(req.params.id)) next();
-    else {
-      new ErrorHandler(400, 'Not valid mongo id');
-    }
+    if (!req.params.id) throw new ErrorHandler(422, 'Include id param in request');
+    if (!isValidObjectId(req.params.id)) throw new ErrorHandler(400, 'Not valid mongo id');
+    next();
   } catch (error) {
     next(error);
   }
