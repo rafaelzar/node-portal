@@ -28,7 +28,7 @@ export const validateJWT: RequestHandler = async (req, _res, next) => {
       throw new ErrorHandler(403, 'Unauthorized, Invalid id');
     }
 
-    if (decodedJwt.aud !== process.env.COGNITO_WEBAPP_CLIENT_ID) {
+    if (decodedJwt.aud !== process.env.COGNITO_APP_CLIENT_ID) {
       // token audience (client_id) is invalid
       throw new ErrorHandler(403, 'invalid aud/client_id');
     }
@@ -42,7 +42,7 @@ export const validateJWT: RequestHandler = async (req, _res, next) => {
     }
 
     // throws error if expired, invalid, or verification failure
-    const verified = jwt.verify(idToken, pem, {
+    const verified = jwt.verify(token, pem, {
       issuer: decodedJwt.iss,
     }) as string | any;
 
