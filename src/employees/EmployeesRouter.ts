@@ -8,7 +8,7 @@ class EmployeesRouter {
   private _controller = EmployeesController;
 
   private validateJwt = this._controller.validateJwt.bind(this._controller);
-  private updateEmployee = this._controller.updateEmployee.bind(this._configure);
+  private updateEmployee = this._controller.updateEmployee.bind(this._controller);
 
   get router() {
     return this._router;
