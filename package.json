@@ -8,7 +8,7 @@
     "npm": "7.x"
   },
   "scripts": {
-    "dev": "nodemon -r dotenv/config src/index.ts",
+    "dev": "nodemon ./src/index.ts",
     "types": "yarn add ssh://git@github.com/eyerate/types",
     "start": "tsc && node ./build/index.js",
     "format": "prettier --write \"src/**/*.ts\" \"src/test/**/*.ts\"",
