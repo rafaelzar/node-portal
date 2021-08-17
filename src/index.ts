@@ -1,6 +1,7 @@
-import mongoose, { ConnectOptions } from "mongoose";
-import ENV from "./env-config";
-import App from "./App";
+import mongoose, { ConnectOptions } from 'mongoose';
+import ENV from './env-config';
+import App from './App';
+import { eventTrigger } from './send-grid/mention-trigger';
 
 const mongoString = ENV.APP_DB_URI;
 const mongoOptions: ConnectOptions = {
@@ -18,11 +19,12 @@ const mongoOptions: ConnectOptions = {
 mongoose
   .connect(mongoString, mongoOptions)
   .then(() => {
+    eventTrigger();
     const myApp = App.getInstance();
     myApp.listen(ENV.APP_PORT);
   })
   .catch((error) => {
-    console.log("error", `Error in index.ts: ${error}`);
+    console.log('error', `Error in index.ts: ${error}`);
   });
 
 mongoose.Promise = global.Promise;
