@@ -38,22 +38,69 @@ class EmployeesController {
   async averageStarRating(req: Request, res: Response, next: NextFunction) {
     try {
       const queryPlatform = JSON.parse(req.query.platform as string);
-      const queryDate = JSON.parse(req.query.date as string);
       const mentions = await this.mentionModel.find({ employee: Types.ObjectId(req.params.id) });
       if (!mentions.length) throw new ErrorHandler(404, 'Mentions for employee not found');
+      const mentionIds = mentions.map((mention) => {
+        const mentionObj = mention.toObject();
+        return mentionObj.review;
+      });
       const reviews = await this.reviewModel.find({
-        _id: { $in: mentions.map((mention) => mention.review) },
+        _id: { $in: mentionIds },
         platform: { $in: queryPlatform },
-        date: queryDate,
+        created_at: this.queryDate(req),
       });
       let sumReview = 0;
       for (const review of reviews) {
-        sumReview += review.rating;
+        const reviewObj = review.toObject();
+        sumReview += reviewObj.rating;
       }
       const averageRating = sumReview / reviews.length;
       res.send({ averageRating });
     } catch (error) {
       next(error);
+    }
+  }
+
+  queryDate(req: Request) {
+    if (!req.query.startDate && !req.query.endDate) {
+      return {
+        $lt: new Date(),
+      };
+    }
+
+    if (req.query.startDate && !req.query.endDate) {
+      const startDate = new Date(req.query.startDate as string);
+      if (startDate.toString() === 'Invalid Date') {
+        throw new ErrorHandler(422, 'Invalid date');
+      }
+      return {
+        $gt: startDate,
+      };
+    }
+
+    if (!req.query.startDate && req.query.endDate) {
+      const endDate = new Date(req.query.endDate as string);
+      if (endDate.toString() === 'Invalid Date') {
+        throw new ErrorHandler(422, 'Invalid date');
+      }
+      return {
+        $lt: endDate,
+      };
+    }
+
+    if (req.query.startDate && req.query.endDate) {
+      const startDate = new Date(req.query.startDate as string);
+      const endDate = new Date(req.query.endDate as string);
+      if (startDate.toString() === 'Invalid Date' || endDate.toString() === 'Invalid Date') {
+        throw new ErrorHandler(422, 'Invalid date');
+      }
+      if (startDate > endDate) {
+        throw new ErrorHandler(422, 'Start date must happen before end date');
+      }
+      return {
+        $gt: startDate,
+        $lt: endDate,
+      };
     }
   }
 }
