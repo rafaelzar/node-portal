@@ -13,50 +13,6 @@ export const validateQueryParam = (req: Request, _: Response, next: NextFunction
         req.query.platform = JSON.stringify([platform]);
       }
     }
-    if (!req.query.startDate && !req.query.endDate) {
-      const queryDate = {
-        $lt: new Date(),
-      };
-      req.query.date = JSON.stringify(queryDate);
-    }
-
-    if (req.query.startDate && !req.query.endDate) {
-      const startDate = new Date(req.query.startDate as string);
-      if (startDate.toString() === 'Invalid Date') {
-        throw new ErrorHandler(422, 'Invalid date');
-      }
-      const queryDate = {
-        $gt: startDate,
-      };
-      req.query.date = JSON.stringify(queryDate);
-    }
-
-    if (!req.query.startDate && req.query.endDate) {
-      const endDate = new Date(req.query.endDate as string);
-      if (endDate.toString() === 'Invalid Date') {
-        throw new ErrorHandler(422, 'Invalid date');
-      }
-      const queryDate = {
-        $lt: endDate,
-      };
-      req.query.date = JSON.stringify(queryDate);
-    }
-
-    if (req.query.startDate && req.query.endDate) {
-      const startDate = new Date(req.query.startDate as string);
-      const endDate = new Date(req.query.endDate as string);
-      if (startDate.toString() === 'Invalid Date' || endDate.toString() === 'Invalid Date') {
-        throw new ErrorHandler(422, 'Invalid date');
-      }
-      if (startDate > endDate) {
-        throw new ErrorHandler(422, 'Start date must happen before end date');
-      }
-      const queryDate = {
-        $gt: startDate,
-        $lt: endDate,
-      };
-      req.query.date = JSON.stringify(queryDate);
-    }
     next();
   } catch (error) {
     next(error);
