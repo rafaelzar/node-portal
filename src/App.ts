@@ -7,7 +7,6 @@ import cors from 'cors';
  * Express server application class using singleton
  * @description tbd
  */
-
 declare global {
   namespace Express {
     interface Request {
