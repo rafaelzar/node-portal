@@ -17,8 +17,6 @@ export const validateQueryParam = (req: Request, _: Response, next: NextFunction
       }
     }
 
-    const date = {};
-
     if (!req.query.startDate && !req.query.endDate) {
       queryObj.$and.push({ date: { $lt: new Date() } });
     }
@@ -85,8 +83,6 @@ export const validateQueryParam = (req: Request, _: Response, next: NextFunction
     } else if ((!sort && sortBy) || (sort && !sortBy)) {
       throw new ErrorHandler(400, 'Both sort and sortBy params required');
     }
-
-    req.date = date;
     req.queryObj = queryObj;
     next();
   } catch (error) {
