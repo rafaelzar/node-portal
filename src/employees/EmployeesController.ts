@@ -27,7 +27,18 @@ class EmployeesController {
 
   async updateEmployee(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = await this.employeeModel.findOneAndUpdate({ email: req.params.id }, req.body, { new: true });
+      const user = await this.employeeModel.findOneAndUpdate(
+        { _id: Types.ObjectId(req.params.id) },
+        {
+          $set: {
+            first_name: req.body.first_name,
+            last_name: req.body.last_name,
+            phone: req.body.phone,
+            nick_names: req.body.nick_names,
+          },
+        },
+        { new: true },
+      );
       if (!user) throw new ErrorHandler(404, 'Employee not updated');
       res.send(user);
     } catch (error) {

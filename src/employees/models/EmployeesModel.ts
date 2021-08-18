@@ -23,7 +23,7 @@ export const EmployeeSchema: Schema = new Schema(
       require: true,
     },
     nick_names: {
-      type: [Types.ObjectId],
+      type: [String],
     },
     active: {
       type: Boolean,
