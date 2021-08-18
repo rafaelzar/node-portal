@@ -11,11 +11,12 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{eyerate_host}}employees/reviews/:id?startDate=2021-05-02&endDate=2021-07-18&rating=5&platform=Weedmaps&keyword=Great%20customer%20service%20Very%20friendly%20and%20great%20customer%20service%20love%20her%20Hadley&page=1",
+					"raw": "{{eyerate_host}}/employees/reviews/:id?startDate=2021-05-02&endDate=2021-07-18&rating=5&platform=Weedmaps&keyword=Great%20customer%20service%20Very%20friendly%20and%20great%20customer%20service%20love%20her%20Hadley&page=1",
 					"host": [
-						"{{eyerate_host}}employees"
+						"{{eyerate_host}}"
 					],
 					"path": [
+						"employees",
 						"reviews",
 						":id"
 					],
