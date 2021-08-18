@@ -62,9 +62,11 @@ export const validateQueryParam = (req: Request, _: Response, next: NextFunction
         rating: { $eq: rating },
       });
     }
-    if (req.query.content) {
-      const content = req.query.content;
-      queryObj.$and.push({ content: { $regex: content, $options: 'i' } });
+    if (req.query.keyword) {
+      const keyword = req.query.keyword as string;
+      const key = keyword.split('%20').join(' ');
+
+      queryObj.$and.push({ content: { $regex: key, $options: 'i' } });
     }
     if (req.query.eyerate) {
       const eyerate = req.query.eyerate;
@@ -82,6 +84,12 @@ export const validateQueryParam = (req: Request, _: Response, next: NextFunction
       }
     } else if ((!sort && sortBy) || (sort && !sortBy)) {
       throw new ErrorHandler(400, 'Both sort and sortBy params required');
+    }
+    if (req.query.page) {
+      const page = Number(req.query.page);
+      if (isNaN(page) || page < 1) {
+        throw new ErrorHandler(400, 'Page must be a number greater than equal to 1');
+      }
     }
     req.queryObj = queryObj;
     next();
