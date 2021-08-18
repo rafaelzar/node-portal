@@ -1,13 +1,197 @@
 {
 	"info": {
-		"_postman_id": "2f0a2864-be58-4c28-b88d-6c1b873110cc",
+		"_postman_id": "4180941f-cf7e-40b9-bbaa-74f90d33e026",
 		"name": "employee-portal-backend",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "get cognito user",
+			"name": "get nonEyeRate reviews",
 			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{eyerate_host}}employees/reviews/:id?startDate=2021-05-02&endDate=2021-07-18&rating=5&platform=Weedmaps&keyword=Great%20customer%20service%20Very%20friendly%20and%20great%20customer%20service%20love%20her%20Hadley&page=1",
+					"host": [
+						"{{eyerate_host}}employees"
+					],
+					"path": [
+						"reviews",
+						":id"
+					],
+					"query": [
+						{
+							"key": "startDate",
+							"value": "2021-05-02",
+							"description": "date format YYYY-MM-DD"
+						},
+						{
+							"key": "endDate",
+							"value": "2021-07-18",
+							"description": "date format YYYY-MM-DD"
+						},
+						{
+							"key": "rating",
+							"value": "5",
+							"description": "rating from 1-5"
+						},
+						{
+							"key": "platform",
+							"value": "Weedmaps",
+							"description": "platform(case sensitive) - Google, Weedmaps, GMB, Yelp can also be combination of these \n`e.g. Google,Weedmaps`"
+						},
+						{
+							"key": "keyword",
+							"value": "Great%20customer%20service%20Very%20friendly%20and%20great%20customer%20service%20love%20her%20Hadley",
+							"description": "string that matches content of review"
+						},
+						{
+							"key": "page",
+							"value": "1"
+						},
+						{
+							"key": "sort",
+							"value": "asc",
+							"description": "asc or desc",
+							"disabled": true
+						},
+						{
+							"key": "sortBy",
+							"value": "rating",
+							"description": "rating or date",
+							"disabled": true
+						},
+						{
+							"key": "",
+							"value": null,
+							"disabled": true
+						}
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "607a1d65e4be5100126b827e",
+							"description": "employee id"
+						}
+					]
+				},
+				"description": "Query params:\r\n* startDate/endDate- date format YYYY/MM/DD\r\n\r\n* rating- 1-5\r\n\r\n* keyword- string that matches content of review\r\n\r\n* platform(case sensitive) - Google, Weedmaps, GMB, Yelp can also be combination of these \r\n`e.g. Google,Weedmaps`\r\n\r\n* sort - Can be either asc or desc\r\n\r\n* sortBy - Can be rating or date\r\n\r\n\r\n "
+			},
+			"response": [
+				{
+					"name": "get nonEyeRate reviews example",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{eyerate_host}}employees/reviews/607a1d65e4be5100126b827e?startDate=2021-05-02&endDate=2021-07-18&rating=5&platform=Weedmaps&keyword=Great%20customer%20service%20Very%20friendly%20and%20great%20customer%20service%20love%20her%20Hadley&page=1",
+							"host": [
+								"{{eyerate_host}}employees"
+							],
+							"path": [
+								"reviews",
+								"607a1d65e4be5100126b827e"
+							],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "2021-05-02",
+									"description": "date format YYYY/MM/DD"
+								},
+								{
+									"key": "endDate",
+									"value": "2021-07-18",
+									"description": "date format YYYY/MM/DD"
+								},
+								{
+									"key": "rating",
+									"value": "5",
+									"description": "rating from 1-5"
+								},
+								{
+									"key": "platform",
+									"value": "Weedmaps",
+									"description": "platform(case sensitive) - Google, Weedmaps, GMB, Yelp can also be combination of these \n`e.g. Google,Weedmaps`"
+								},
+								{
+									"key": "keyword",
+									"value": "Great%20customer%20service%20Very%20friendly%20and%20great%20customer%20service%20love%20her%20Hadley",
+									"description": "string that matches content of review"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "sort",
+									"value": "asc",
+									"description": "asc or desc",
+									"disabled": true
+								},
+								{
+									"key": "sortBy",
+									"value": "rating",
+									"description": "rating or date",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "X-Powered-By",
+							"value": "Express"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json; charset=utf-8"
+						},
+						{
+							"key": "Content-Length",
+							"value": "237"
+						},
+						{
+							"key": "ETag",
+							"value": "W/\"ed-CHcpaPfQDyBOME6DfQK/+P4WbfA\""
+						},
+						{
+							"key": "Date",
+							"value": "Wed, 18 Aug 2021 13:55:50 GMT"
+						},
+						{
+							"key": "Connection",
+							"value": "keep-alive"
+						},
+						{
+							"key": "Keep-Alive",
+							"value": "timeout=5"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"data\": [\n        {\n            \"_id\": \"6090aabf5036240723ef25cf\",\n            \"author\": \"Daionna\",\n            \"content\": \"Great customer service Very friendly and great customer service love her Hadley\",\n            \"date\": \"2021-05-02T22:51:42.000Z\",\n            \"rating\": 5,\n            \"platform\": \"Weedmaps\"\n        }\n    ],\n    \"pageCount\": 1\n}"
+				}
+			]
+		},
+		{
+			"name": "get user",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJraWQiOiJNUVB0bTRCQnA3WldEaDFIYlBlN1NwTlBUU294ZlEyZkFnM0NLZGh1M1wvUT0iLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJjM2Y5OWQxYS01NzM2LTQwYTAtODgzNi1jNDExZDQwNGNhZGEiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLmV1LWNlbnRyYWwtMS5hbWF6b25hd3MuY29tXC9ldS1jZW50cmFsLTFfMk41RmVqdTdwIiwiY29nbml0bzp1c2VybmFtZSI6ImMzZjk5ZDFhLTU3MzYtNDBhMC04ODM2LWM0MTFkNDA0Y2FkYSIsIm9yaWdpbl9qdGkiOiI3M2ZkOWE3MS00MWZlLTQxMWMtYjljYi1jYjA4OWYxMjI5OWIiLCJhdWQiOiI4ZzhiMzVyZmdrb3FzdWQ2NTVndDN0aXJhIiwiZXZlbnRfaWQiOiI0OGM1ODhmMS0yYmExLTRhZDMtOTlhZi0xNmE4NjMxNzg3MzkiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTYyODY4NzA3NCwiZXhwIjoxNjI4NjkwNjc0LCJpYXQiOjE2Mjg2ODcwNzQsImp0aSI6ImY2MjA3MTZhLWJlZTktNDFjYS04NzI1LTgwM2U0NjZjMzhjNiIsImVtYWlsIjoicHJpbmNjcm5pKzFAZ21haWwuY29tIn0.n_6dlAA43lhChG1hf_sB12RbHRHeeEIJ7LhfF1BzPFKO2puOfKcq5O8hOPfh2djSXYsw7i3TAKl0HD1bYKhVetfjTWdRel0qF7TBDoq2gSCWHY_xuKgutWxCw1btL_ovVRFfnlul4c0Iip1MUBrlxxW3qXjaSxsND5u8lsseBHaZspCJHkSHEbe2BQmHMAyGtTp69MMiGuXAxr7gPc0cE0Bz6v7Ag3EbOMX3kD2yMQdrtkegBHm2CA2E4OYsrn0rYSlgTdmSQD4GmfIXoulG4rKkZhaQnQ8BXrlykcAMTp2K5d0dIM5ZUHmviwAdE8ulSPuq12BuYkysl6QqMysn1Q",
+							"type": "string"
+						}
+					]
+				},
 				"method": "GET",
 				"header": [],
 				"url": {
@@ -35,6 +219,39 @@
 					],
 					"path": [
 						"public"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "update user",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"first_name\": \"John\",\n    \"last_name\": \"Sena\",\n    \"phone\": \"+3060101\",\n    \"nick_names\": [\"Minime\", \"SayHelloToMyLittleFriend\"]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{eyerate_host}}/employees/:id",
+					"host": [
+						"{{eyerate_host}}"
+					],
+					"path": [
+						"employees",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "5f8747f8a37cd807fa099658"
+						}
 					]
 				}
 			},
