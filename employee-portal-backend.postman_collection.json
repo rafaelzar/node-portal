@@ -6,8 +6,18 @@
 	},
 	"item": [
 		{
-			"name": "get cognito user",
+			"name": "get user",
 			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJraWQiOiJNUVB0bTRCQnA3WldEaDFIYlBlN1NwTlBUU294ZlEyZkFnM0NLZGh1M1wvUT0iLCJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJjM2Y5OWQxYS01NzM2LTQwYTAtODgzNi1jNDExZDQwNGNhZGEiLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiaXNzIjoiaHR0cHM6XC9cL2NvZ25pdG8taWRwLmV1LWNlbnRyYWwtMS5hbWF6b25hd3MuY29tXC9ldS1jZW50cmFsLTFfMk41RmVqdTdwIiwiY29nbml0bzp1c2VybmFtZSI6ImMzZjk5ZDFhLTU3MzYtNDBhMC04ODM2LWM0MTFkNDA0Y2FkYSIsIm9yaWdpbl9qdGkiOiI3M2ZkOWE3MS00MWZlLTQxMWMtYjljYi1jYjA4OWYxMjI5OWIiLCJhdWQiOiI4ZzhiMzVyZmdrb3FzdWQ2NTVndDN0aXJhIiwiZXZlbnRfaWQiOiI0OGM1ODhmMS0yYmExLTRhZDMtOTlhZi0xNmE4NjMxNzg3MzkiLCJ0b2tlbl91c2UiOiJpZCIsImF1dGhfdGltZSI6MTYyODY4NzA3NCwiZXhwIjoxNjI4NjkwNjc0LCJpYXQiOjE2Mjg2ODcwNzQsImp0aSI6ImY2MjA3MTZhLWJlZTktNDFjYS04NzI1LTgwM2U0NjZjMzhjNiIsImVtYWlsIjoicHJpbmNjcm5pKzFAZ21haWwuY29tIn0.n_6dlAA43lhChG1hf_sB12RbHRHeeEIJ7LhfF1BzPFKO2puOfKcq5O8hOPfh2djSXYsw7i3TAKl0HD1bYKhVetfjTWdRel0qF7TBDoq2gSCWHY_xuKgutWxCw1btL_ovVRFfnlul4c0Iip1MUBrlxxW3qXjaSxsND5u8lsseBHaZspCJHkSHEbe2BQmHMAyGtTp69MMiGuXAxr7gPc0cE0Bz6v7Ag3EbOMX3kD2yMQdrtkegBHm2CA2E4OYsrn0rYSlgTdmSQD4GmfIXoulG4rKkZhaQnQ8BXrlykcAMTp2K5d0dIM5ZUHmviwAdE8ulSPuq12BuYkysl6QqMysn1Q",
+							"type": "string"
+						}
+					]
+				},
 				"method": "GET",
 				"header": [],
 				"url": {
@@ -35,6 +45,39 @@
 					],
 					"path": [
 						"public"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "update user",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"first_name\": \"John\",\n    \"last_name\": \"Sena\",\n    \"phone\": \"+3060101\",\n    \"nick_names\": [\"Minime\", \"SayHelloToMyLittleFriend\"]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{eyerate_host}}/employees/:id",
+					"host": [
+						"{{eyerate_host}}"
+					],
+					"path": [
+						"employees",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "5f8747f8a37cd807fa099658"
+						}
 					]
 				}
 			},
