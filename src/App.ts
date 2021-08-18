@@ -11,7 +11,6 @@ declare global {
   namespace Express {
     interface Request {
       user?: Record<string, any>;
-      date?: Record<string, any>;
       queryObj?: Record<string, any>;
     }
   }

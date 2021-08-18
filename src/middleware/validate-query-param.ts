@@ -17,8 +17,6 @@ export const validateQueryParam = (req: Request, _: Response, next: NextFunction
       }
     }
 
-    const date = {};
-
     if (!req.query.startDate && !req.query.endDate) {
       queryObj.$and.push({ date: { $lt: new Date() } });
     }
@@ -93,8 +91,6 @@ export const validateQueryParam = (req: Request, _: Response, next: NextFunction
         throw new ErrorHandler(400, 'Page must be a number greater than equal to 1');
       }
     }
-
-    req.date = date;
     req.queryObj = queryObj;
     next();
   } catch (error) {
