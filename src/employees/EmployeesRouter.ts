@@ -4,7 +4,6 @@ import { validateJWT } from '../middleware/validate-jwt';
 import EmployeesController from './EmployeesController';
 import { validateMongoId } from '../middleware/validate-mongo-id';
 import autoBind from 'auto-bind';
-
 import { validateQueryParam } from '../middleware/validate-query-param';
 
 class EmployeesRouter {

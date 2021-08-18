@@ -1,10 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
-import { Employee, Review, Mention } from 'eyerate';
+import { Employee, Location, Review, Mention, Conversation } from 'eyerate';
 import EmployeeModel from './models/EmployeesModel';
 import { Model, Types } from 'mongoose';
 import ErrorHandler from '../errors/ErrorHandler';
-import MentionModel from './models/MentionModel';
+import LocationModel from './models/MentionModel';
 import ReviewModel from './models/ReviewsModel';
+import MentionModel from './models/MentionModel';
 
 class EmployeesController {
   constructor(
@@ -17,7 +18,6 @@ class EmployeesController {
     try {
       if (!req.user) throw new ErrorHandler(404, 'Cognito user not found');
       const user = await this.employeeModel.findOne({ email: req.user.email });
-
       if (!user) throw new ErrorHandler(404, 'Employee not found');
       res.send(user);
     } catch (error) {
@@ -48,25 +48,23 @@ class EmployeesController {
 
   async averageStarRating(req: Request, res: Response, next: NextFunction) {
     try {
-      const queryPlatform = JSON.parse(req.query.platform as string);
-      const mentions = await this.mentionModel.find({ employee: Types.ObjectId(req.params.id) });
-      if (!mentions.length) throw new ErrorHandler(404, 'Mentions for employee not found');
-      const mentionIds = mentions.map((mention) => {
-        const mentionObj = mention.toObject();
-        return mentionObj.review;
-      });
-      const reviews = await this.reviewModel.find({
-        _id: { $in: mentionIds },
-        platform: { $in: queryPlatform },
-        created_at: req.date,
-      });
+      if (!req.queryObj) throw new ErrorHandler(422, 'Query object not provided');
+      const queryObj = {
+        $and: req.queryObj.$and.filter((obj: any) => obj.hasOwnProperty('platform') || obj.hasOwnProperty('date')),
+      };
+      const mentions: any[] = await this.mentionModel
+        .find({
+          employee: Types.ObjectId(req.params.id),
+        })
+        .populate({ path: 'review', select: 'review', model: ReviewModel, match: queryObj });
+      const filterMentions = mentions.filter((mention) => mention.review === null);
+      if (!filterMentions.length) throw new ErrorHandler(404, 'Mentions for employee not found');
       let sumReview = 0;
-      for (const review of reviews) {
-        const reviewObj = review.toObject();
-        sumReview += reviewObj.rating;
+      for (const mention of filterMentions) {
+        sumReview += mention.review.rating;
       }
-      const averageRating = sumReview / reviews.length;
-      res.send({ averageRating });
+      const averageRating = sumReview / mentions.length;
+      return { averageRating };
     } catch (error) {
       next(error);
     }
