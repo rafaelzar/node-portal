@@ -48,25 +48,53 @@ class EmployeesController {
 
   async averageStarRating(req: Request, res: Response, next: NextFunction) {
     try {
-      const queryPlatform = JSON.parse(req.query.platform as string);
-      const mentions = await this.mentionModel.find({ employee: Types.ObjectId(req.params.id) });
-      if (!mentions.length) throw new ErrorHandler(404, 'Mentions for employee not found');
-      const mentionIds = mentions.map((mention) => {
-        const mentionObj = mention.toObject();
-        return mentionObj.review;
-      });
-      const reviews = await this.reviewModel.find({
-        _id: { $in: mentionIds },
-        platform: { $in: queryPlatform },
-        created_at: req.date,
-      });
+      if (!req.queryObj) throw new ErrorHandler(422, 'Query object not provided');
+      const queryObj = {
+        $and: req.queryObj.$and.filter((obj: any) => obj.hasOwnProperty('platform') || obj.hasOwnProperty('date')),
+      };
+      const mentions: any[] = await this.mentionModel
+        .find({
+          employee: Types.ObjectId(req.params.id),
+        })
+        .populate({ path: 'review', select: 'review', model: ReviewModel, match: queryObj });
+      const filterMentions = mentions.filter((mention) => mention.review === null);
+      if (!filterMentions.length) throw new ErrorHandler(404, 'Mentions for employee not found');
       let sumReview = 0;
-      for (const review of reviews) {
-        const reviewObj = review.toObject();
-        sumReview += reviewObj.rating;
+      for (const mention of filterMentions) {
+        sumReview += mention.review.rating;
       }
-      const averageRating = sumReview / reviews.length;
-      res.send({ averageRating });
+      const averageRating = sumReview / mentions.length;
+      return { averageRating };
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getReviews(req: Request, res: Response, next: NextFunction) {
+    try {
+      const queryObj = req.queryObj as any;
+      const sort = req.query.sort as string;
+      const eyerate = req.query.eyerate;
+      const sortBy = req.query.sortBy as string;
+      const page = parseInt(req.query.page as string);
+      const size = 5;
+
+      const userId = req.params.id;
+      const mentions = await this.mentionModel.find({ employee: Types.ObjectId(userId) }, { review: 1, _id: 0 });
+      const reviewIds = mentions.map((el) => el.toObject().review);
+
+      queryObj.$and.push({ _id: { $in: reviewIds } });
+
+      const reviewCount = await this.reviewModel.find(queryObj).countDocuments();
+      const reviews = await this.reviewModel
+        .find(queryObj)
+        .sort({ [sortBy]: sort })
+        .select('date content rating platform author')
+        .skip((page - 1) * size)
+        .limit(size);
+      console.log(reviews);
+
+      res.send({ data: reviews, pageCount: Math.floor(reviewCount / size) + 1 });
     } catch (error) {
       next(error);
     }
