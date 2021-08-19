@@ -48,25 +48,35 @@ class EmployeesController {
     }
   }
 
-  async averageStarRating(req: Request, res: Response, next: NextFunction) {
+  async averageRatingNonEyerate(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.queryObj) throw new ErrorHandler(422, 'Query object not provided');
       const queryObj = {
         $and: req.queryObj.$and.filter((obj: any) => obj.hasOwnProperty('platform') || obj.hasOwnProperty('date')),
       };
-      const mentions: any[] = await this.mentionModel
-        .find({
-          employee: Types.ObjectId(req.params.id),
-        })
-        .populate({ path: 'review', select: 'review', model: ReviewModel, match: queryObj });
-      const filterMentions = mentions.filter((mention) => mention.review === null);
-      if (!filterMentions.length) throw new ErrorHandler(404, 'Mentions for employee not found');
-      let sumReview = 0;
-      for (const mention of filterMentions) {
-        sumReview += mention.review.rating;
-      }
-      const averageRating = sumReview / mentions.length;
-      return { averageRating };
+      const mentions = await this.mentionModel.find({
+        employee: Types.ObjectId(req.params.id),
+      });
+      if (!mentions.length) throw new ErrorHandler(404, 'Mentions for employee not found');
+      queryObj.$and.push({ _id: { $in: mentions.map((mention) => mention.toObject().review) } });
+      const reviews = await this.reviewModel.find(queryObj);
+      if (!reviews.length) throw new ErrorHandler(404, 'Reviews for employee not found');
+      return this.starsAndRating(reviews);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async averageRatingEyerate(req: Request, res: Response, next: NextFunction) {
+    try {
+      if (!req.queryObj) throw new ErrorHandler(422, 'Query object not provided');
+      const queryObj = {
+        $and: req.queryObj.$and.filter((obj: any) => obj.hasOwnProperty('created_at')),
+      };
+      queryObj.$and.push({ employee: Types.ObjectId(req.params.id) }, { rating: { $ne: null } });
+      const conversations = await this.conversationModel.find(queryObj);
+      if (!conversations.length) throw new ErrorHandler(404, 'Conversation for employee with given query not found');
+      return this.starsAndRating(conversations);
     } catch (error) {
       next(error);
     }
@@ -112,19 +122,19 @@ class EmployeesController {
     let star2 = 0;
     let star1 = 0;
     for (const documentObj of documentArray) {
-      if (documentObj.rating === 5) star5++;
-      if (documentObj.rating === 4) star4++;
-      if (documentObj.rating === 3) star3++;
-      if (documentObj.rating === 2) star2++;
-      if (documentObj.rating === 1) star1++;
-      sumReview += documentObj.rating;
+      if (documentObj.toObject().rating === 5) star5++;
+      if (documentObj.toObject().rating === 4) star4++;
+      if (documentObj.toObject().rating === 3) star3++;
+      if (documentObj.toObject().rating === 2) star2++;
+      if (documentObj.toObject().rating === 1) star1++;
+      sumReview += documentObj.toObject().rating;
     }
     const starsData = [
-      { stars: 5, percent: Math.round((star5 / sumReview) * 100), number: star5 },
-      { stars: 4, percent: Math.round((star4 / sumReview) * 100), number: star4 },
-      { stars: 3, percent: Math.round((star3 / sumReview) * 100), number: star3 },
-      { stars: 2, percent: Math.round((star2 / sumReview) * 100), number: star2 },
-      { stars: 1, percent: Math.round((star1 / sumReview) * 100), number: star1 },
+      { stars: 5, percent: Math.round((star5 / documentArray.length) * 100), number: star5 },
+      { stars: 4, percent: Math.round((star4 / documentArray.length) * 100), number: star4 },
+      { stars: 3, percent: Math.round((star3 / documentArray.length) * 100), number: star3 },
+      { stars: 2, percent: Math.round((star2 / documentArray.length) * 100), number: star2 },
+      { stars: 1, percent: Math.round((star1 / documentArray.length) * 100), number: star1 },
     ];
     const averageRating = sumReview / documentArray.length;
     return { averageRating, starsData };
