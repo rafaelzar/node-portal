@@ -5,15 +5,25 @@ export const validateQueryParam = (req: Request, _: Response, next: NextFunction
   try {
     const queryObj = { $and: [] } as any;
 
-    if (!req.query.platform) queryObj.$and.push({ platform: { $in: ['Weedmaps', 'Yelp', 'Google', 'GMB'] } });
-    else {
-      const platform = req.query.platform as string;
-      if (platform.indexOf(',') > -1) {
-        const arr = platform.split(',');
+    // if (!req.query.platform) queryObj.$and.push({ platform: { $in: ['Weedmaps', 'Yelp', 'Google', 'GMB'] } });
+    // else {
+    //   const platform = req.query.platform as string;
+    //   if (platform.indexOf(',') > -1) {
+    //     const arr = platform.split(',');
 
-        queryObj.$and.push({ platform: { $in: arr } });
-      } else {
-        queryObj.$and.push({ platform: { $in: [platform] } });
+    //     queryObj.$and.push({ platform: { $in: arr } });
+    //   } else {
+    //     queryObj.$and.push({ platform: { $in: [platform] } });
+    //   }
+    // }
+
+    if (req.query.platform) {
+      const { platform } = req.query;
+      const platofrmTypes = ['Weedmaps', 'Yelp', 'Google', 'GMB', 'Eyerate'];
+      if (!platofrmTypes.includes(platform as string))
+        throw new ErrorHandler(400, 'Platform must match one of the following Weedmaps, Yelp, Google, GMB or Eyerate');
+      if (platform !== 'Eyerate') {
+        queryObj.$and.push({ platform: platform });
       }
     }
 
