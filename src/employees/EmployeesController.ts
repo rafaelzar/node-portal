@@ -6,12 +6,14 @@ import ErrorHandler from '../errors/ErrorHandler';
 import LocationModel from './models/MentionModel';
 import ReviewModel from './models/ReviewsModel';
 import MentionModel from './models/MentionModel';
+import ConversationModel from './models/ConversationModels';
 
 class EmployeesController {
   constructor(
     private employeeModel: Model<Employee>,
     private mentionModel: Model<Mention>,
     private reviewModel: Model<Review>,
+    private conversationModel: Model<Conversation>,
   ) {}
 
   async validateJwt(req: Request, res: Response, next: NextFunction) {
@@ -99,6 +101,34 @@ class EmployeesController {
       next(error);
     }
   }
+
+  // helper methods
+
+  starsAndRating(documentArray: any[]) {
+    let sumReview = 0;
+    let star5 = 0;
+    let star4 = 0;
+    let star3 = 0;
+    let star2 = 0;
+    let star1 = 0;
+    for (const documentObj of documentArray) {
+      if (documentObj.rating === 5) star5++;
+      if (documentObj.rating === 4) star4++;
+      if (documentObj.rating === 3) star3++;
+      if (documentObj.rating === 2) star2++;
+      if (documentObj.rating === 1) star1++;
+      sumReview += documentObj.rating;
+    }
+    const starsData = [
+      { stars: 5, percent: Math.round((star5 / sumReview) * 100), number: star5 },
+      { stars: 4, percent: Math.round((star4 / sumReview) * 100), number: star4 },
+      { stars: 3, percent: Math.round((star3 / sumReview) * 100), number: star3 },
+      { stars: 2, percent: Math.round((star2 / sumReview) * 100), number: star2 },
+      { stars: 1, percent: Math.round((star1 / sumReview) * 100), number: star1 },
+    ];
+    const averageRating = sumReview / documentArray.length;
+    return { averageRating, starsData };
+  }
 }
 
-export = new EmployeesController(EmployeeModel, MentionModel, ReviewModel);
+export = new EmployeesController(EmployeeModel, MentionModel, ReviewModel, ConversationModel);
