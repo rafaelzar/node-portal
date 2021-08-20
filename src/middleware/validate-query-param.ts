@@ -5,18 +5,6 @@ export const validateQueryParam = (req: Request, _: Response, next: NextFunction
   try {
     const queryObj = { $and: [] } as any;
 
-    // if (!req.query.platform) queryObj.$and.push({ platform: { $in: ['Weedmaps', 'Yelp', 'Google', 'GMB'] } });
-    // else {
-    //   const platform = req.query.platform as string;
-    //   if (platform.indexOf(',') > -1) {
-    //     const arr = platform.split(',');
-
-    //     queryObj.$and.push({ platform: { $in: arr } });
-    //   } else {
-    //     queryObj.$and.push({ platform: { $in: [platform] } });
-    //   }
-    // }
-
     if (req.query.platform) {
       const { platform } = req.query;
       const platofrmTypes = ['Weedmaps', 'Yelp', 'Google', 'GMB', 'Eyerate'];
@@ -29,6 +17,7 @@ export const validateQueryParam = (req: Request, _: Response, next: NextFunction
 
     if (!req.query.startDate && !req.query.endDate) {
       queryObj.$and.push({ date: { $lt: new Date() } });
+      queryObj.$and.push({ created_at: { $lt: new Date() } });
     }
 
     if (req.query.startDate && !req.query.endDate) {
@@ -37,9 +26,8 @@ export const validateQueryParam = (req: Request, _: Response, next: NextFunction
         throw new ErrorHandler(422, 'Invalid date');
       }
 
-      queryObj.$and.push({
-        date: { $gt: startDate },
-      });
+      queryObj.$and.push({ date: { $gt: startDate } });
+      queryObj.$and.push({ created_at: { $gt: startDate } });
     }
 
     if (!req.query.startDate && req.query.endDate) {
@@ -47,9 +35,8 @@ export const validateQueryParam = (req: Request, _: Response, next: NextFunction
       if (endDate.toString() === 'Invalid Date') {
         throw new ErrorHandler(422, 'Invalid date');
       }
-      queryObj.$and.push({
-        date: { $lt: endDate },
-      });
+      queryObj.$and.push({ date: { $lt: endDate } });
+      queryObj.$and.push({ created_at: { $lt: endDate } });
     }
 
     if (req.query.startDate && req.query.endDate) {
@@ -61,9 +48,8 @@ export const validateQueryParam = (req: Request, _: Response, next: NextFunction
       if (startDate > endDate) {
         throw new ErrorHandler(422, 'Start date must happen before end date');
       }
-      queryObj.$and.push({
-        date: { $gt: startDate, $lt: endDate },
-      });
+      queryObj.$and.push({ date: { $gt: startDate, $lt: endDate } });
+      queryObj.$and.push({ created_at: { $gt: startDate, $lt: endDate } });
     }
     if (req.query.rating) {
       const rating = Number(req.query.rating);
