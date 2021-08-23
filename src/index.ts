@@ -1,7 +1,8 @@
 import mongoose, { ConnectOptions } from 'mongoose';
 import ENV from './env-config';
 import App from './App';
-import { eventTrigger } from './send-grid/mention-trigger';
+import { nonEyerateTrigger } from './send-grid/non-eyerate-trigger';
+import { eyerateTrigger } from './send-grid/eyerate-trigger';
 
 const mongoString = ENV.APP_DB_URI;
 const mongoOptions: ConnectOptions = {
@@ -19,7 +20,8 @@ const mongoOptions: ConnectOptions = {
 mongoose
   .connect(mongoString, mongoOptions)
   .then(() => {
-    eventTrigger();
+    nonEyerateTrigger();
+    eyerateTrigger();
     const myApp = App.getInstance();
     myApp.listen(ENV.APP_PORT);
   })
