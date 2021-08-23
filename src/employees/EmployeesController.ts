@@ -148,7 +148,8 @@ class EmployeesController {
     ];
     const chartData = [Weedmaps, Yelp, Google, GMB];
     const averageRating = sumReview / documentArray.length;
-    return { averageRating, starsData, chartData };
+    const numberOfReviews = documentArray.length;
+    return { numberOfReviews, averageRating, starsData, chartData };
   }
 }
 
