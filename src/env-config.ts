@@ -41,6 +41,11 @@ export default {
   // sendgrid
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
   EMAIL_ADDRESS: String(process.env.EMAIL_ADDRESS),
+  EMPLOYEE_TEMPLATE_ID: String(process.env.EMPLOYEE_TEMPLATE_ID),
+
+  //link to fe
+
+  FE_LINK: String(process.env.FE_LINK),
 
   // cognito
   COGNITO_APP_USER_POOL_ID: process.env.COGNITO_APP_USER_POOL_ID,
