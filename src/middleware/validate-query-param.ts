@@ -42,6 +42,14 @@ export const validateQueryParam = (req: Request, _: Response, next: NextFunction
       queryObj.$and.push({ date: { $gt: startDate, $lt: endDate } });
       queryObj.$and.push({ created_at: { $gt: startDate, $lt: endDate } });
     }
+    if (req.query.firstDate) {
+      const firstDate = new Date(req.query.firstDate as string);
+      if (firstDate.toString() === 'Invalid Date') throw new ErrorHandler(400, 'Invalid date for firstDate');
+    }
+    if (req.query.endDate) {
+      const endDate = new Date(req.query.endDate as string);
+      if (endDate.toString() === 'Invalid Date') throw new ErrorHandler(400, 'Invalid date for endDate');
+    }
 
     if (req.query.rating) {
       const rating = Number(req.query.rating);
