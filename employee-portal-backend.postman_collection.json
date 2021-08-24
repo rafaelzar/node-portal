@@ -11,7 +11,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{eyerate_host}}/employees/reviews/:id?startDate=2021-05-02&endDate=2021-07-18&rating=5&platform=Weedmaps&keyword=Great%20customer%20service%20Very%20friendly%20and%20great%20customer%20service%20love%20her%20Hadley&page=1",
+					"raw": "{{eyerate_host}}/employees/reviews/:id?startDate=2016-01-05&endDate=2021-08-23&sort=asc",
 					"host": [
 						"{{eyerate_host}}"
 					],
@@ -23,56 +23,61 @@
 					"query": [
 						{
 							"key": "startDate",
-							"value": "2021-05-02",
+							"value": "2016-01-05",
 							"description": "date format YYYY-MM-DD"
 						},
 						{
 							"key": "endDate",
-							"value": "2021-07-18",
+							"value": "2021-08-23",
 							"description": "date format YYYY-MM-DD"
 						},
 						{
 							"key": "rating",
 							"value": "5",
-							"description": "rating from 1-5"
+							"description": "rating from 1-5",
+							"disabled": true
 						},
 						{
 							"key": "platform",
 							"value": "Weedmaps",
-							"description": "platform(case sensitive) - Google, Weedmaps, GMB, Yelp can also be combination of these \n`e.g. Google,Weedmaps`"
+							"description": "platform(case sensitive) - Google, Weedmaps, GMB, Yelp or Eyerate",
+							"disabled": true
 						},
 						{
 							"key": "keyword",
 							"value": "Great%20customer%20service%20Very%20friendly%20and%20great%20customer%20service%20love%20her%20Hadley",
-							"description": "string that matches content of review"
-						},
-						{
-							"key": "page",
-							"value": "1"
+							"description": "string that matches content of review (%20 encoding for space)",
+							"disabled": true
 						},
 						{
 							"key": "sort",
 							"value": "asc",
-							"description": "asc or desc",
+							"description": " required  asc or desc"
+						},
+						{
+							"key": "cursor",
+							"value": "right",
+							"description": "left(previous page) or right(next page)  ",
 							"disabled": true
 						},
 						{
-							"key": "sortBy",
-							"value": "rating",
-							"description": "rating or date",
+							"key": "firstDate",
+							"value": "2021-08-03T15:25:42.526Z",
+							"description": "full date format (created_at from first object of array on the page) , firstDate goes with cursor left ",
 							"disabled": true
 						},
 						{
-							"key": "",
-							"value": null,
+							"key": "lastDate",
+							"value": "2021-08-05T00:39:41.001Z",
+							"description": "full date format (created_at from last object of array on the page) , lastDate goes with cursor right",
 							"disabled": true
 						}
 					],
 					"variable": [
 						{
 							"key": "id",
-							"value": "607a1d65e4be5100126b827e",
-							"description": "employee id"
+							"value": "610ad8f087eb7f7f432a9759",
+							"description": "employee id which has both eyerate and noneyerate reviews"
 						}
 					]
 				},
