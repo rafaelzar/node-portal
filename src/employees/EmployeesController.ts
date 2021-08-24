@@ -52,9 +52,8 @@ class EmployeesController {
 
   async averageRatingNonEyerate(req: Request, res: Response, next: NextFunction) {
     try {
-      if (!req.queryObj) throw new ErrorHandler(422, 'Query object not provided');
       const queryObj = {
-        $and: req.queryObj.$and.filter((obj: any) => obj.hasOwnProperty('platform') || obj.hasOwnProperty('date')),
+        $and: req.queryObj?.$and.filter((obj: any) => obj.hasOwnProperty('platform') || obj.hasOwnProperty('date')),
       };
       const mentions = await this.mentionModel.find({
         employee: Types.ObjectId(req.params.id),
@@ -71,9 +70,8 @@ class EmployeesController {
 
   async averageRatingEyerate(req: Request, res: Response, next: NextFunction) {
     try {
-      if (!req.queryObj) throw new ErrorHandler(422, 'Query object not provided');
       const queryObj = {
-        $and: req.queryObj.$and.filter((obj: any) => obj.hasOwnProperty('created_at')),
+        $and: req.queryObj?.$and.filter((obj: any) => obj.hasOwnProperty('created_at')),
       };
       queryObj.$and.push({ employee: Types.ObjectId(req.params.id) }, { rating: { $ne: null } });
       const conversations = await this.conversationModel.find(queryObj);
@@ -83,120 +81,119 @@ class EmployeesController {
       next(error);
     }
   }
-  private async getNonEyerateReviews(req: Request) {
-    const userId = req.params.id;
-    const queryObj = req.queryObj as any;
-    const sort = req.query.sort as string;
-    const sortBy = req.query.sortBy as string;
-    const page = parseInt(req.query.page as string);
 
-    const mentions = await this.mentionModel.find({ employee: Types.ObjectId(userId) }, { review: 1, _id: 0 });
-    const reviewIds = mentions.map((el) => el.toObject().review);
-
-    const query = {
-      $and: queryObj.$and.filter((obj: any) => !obj.hasOwnProperty('created_at')),
-    };
-    query.$and.push({ _id: { $in: reviewIds } });
-
-    // const reviewCount = await this.reviewModel.find(query).countDocuments();
-    const reviews = await this.reviewModel
-      .find(query)
-      .sort({ date: sort })
-      .select('date content rating platform author')
-      .limit(5);
-    console.log(reviews.length, 'lenght'); // const pageCount = reviewCount !== 0 ? Math.ceil(reviewCount / size) : 0;
-    return reviews;
+  async getNonEyerateReviews(req: Request, next: NextFunction) {
+    try {
+      let skip = 0;
+      if (!req.queryObj) throw new ErrorHandler(422, 'Query object not provided');
+      const mentions = await this.mentionModel.find({ employee: Types.ObjectId(req.params.id) });
+      const queryObj = { $and: req.queryObj.$and.filter((obj: any) => !obj.hasOwnProperty('created_at')) };
+      queryObj.$and.push({ _id: { $in: mentions.map((el) => el.toObject().review) } });
+      if (req.query.cursor === 'left') {
+        const count = await this.reviewModel.find(queryObj).countDocuments();
+        if (count < 5) {
+          skip = 0;
+        } else {
+          skip = count - 5;
+        }
+      }
+      const reviews = await this.reviewModel
+        .find(queryObj)
+        .sort({ date: req.query.sort as string })
+        .select('date content rating platform author')
+        .limit(5)
+        .skip(skip);
+      return reviews;
+    } catch (error) {
+      next(error);
+    }
   }
-  private async getEyerateReviews(req: Request) {
-    const userId = req.params.id;
-    const queryObj = req.queryObj as any;
-    const sort = req.query.sort as string;
 
-    const query = {
-      $and: queryObj.$and.filter((obj: any) => !obj.hasOwnProperty('date') || obj.hasOwnProperty('keyword')),
-    };
-
-    query.$and.push({ employee: Types.ObjectId(userId) });
-    console.log(query.$and.map((el: any) => el));
-    const conversations = await this.conversationModel
-      .find(query)
-      .populate({ path: 'customer', select: 'name phone', model: CustomerModel })
-      .sort({ created_at: sort })
-      .select('created_at rating ')
-      .limit(5);
-
-    // console.log(conversations.length);
-    /*
-    _id:
-    customer:{
-      name:
-      phone:
-    },
-    created_at:
-    rating:
-
-
-*/
-
-    return conversations;
+  async getEyerateReviews(req: Request, next: NextFunction) {
+    try {
+      let skip = 0;
+      const queryObj = {
+        $and: req.queryObj?.$and.filter((obj: any) => !obj.hasOwnProperty('date') || obj.hasOwnProperty('keyword')),
+      };
+      queryObj.$and.push({ employee: Types.ObjectId(req.params.id) });
+      if (req.query.cursor === 'left') {
+        const count = await this.conversationModel.find(queryObj).countDocuments();
+        if (count < 5) {
+          skip = 0;
+        } else {
+          skip = count - 5;
+        }
+      }
+      const conversations = await this.conversationModel
+        .find(queryObj)
+        .populate({ path: 'customer', select: 'name phone', model: CustomerModel })
+        .sort({ created_at: req.query.sort as string })
+        .select('created_at rating ')
+        .limit(5)
+        .skip(skip);
+      return conversations;
+    } catch (error) {
+      next(error);
+    }
   }
+
   async getReviews(req: Request, res: Response, next: NextFunction) {
     try {
       if (req.query.platform) {
         if (req.query.platform !== 'Eyerate') {
-          const reviews = await this.getNonEyerateReviews(req);
-          res.send({ data: reviews });
+          res.send({ data: await this.getNonEyerateReviews(req, next) });
         } else {
-          const reviews = await this.getEyerateReviews(req);
-          res.send({ data: reviews });
+          res.send({ data: await this.getEyerateReviews(req, next) });
         }
       } else {
-        const promiseResult = await Promise.all([this.getEyerateReviews(req), this.getNonEyerateReviews(req)]);
+        const promiseResult = await Promise.all([
+          this.getEyerateReviews(req, next),
+          this.getNonEyerateReviews(req, next),
+        ]);
 
-        const res1 = promiseResult[0].map((e: any) => {
+        const res1 = promiseResult[0]?.map((e: any) => {
           const el = e.toObject();
           let rating = 0;
           !el.rating ? rating : (rating = el.rating);
           return {
-            // _id: el._id,
-            // rating: rating,
-            // name: el.customer.name,
-            // phone: el.customer.phone,
+            _id: el._id,
+            rating: rating,
+            name: el.customer.name,
+            phone: el.customer.phone,
             created_at: el.created_at,
           };
         });
 
-        // console.log(res1.length);
-        const res2 = promiseResult[1].map((e: any, i) => {
+        const res2 = promiseResult[1]?.map((e: any, i) => {
           const el = e.toObject();
           const name = el.author;
           const created_at = el.date;
           delete el.author;
           delete el.date;
           return {
-            // ...el,
-            // name,
-
+            ...el,
+            name,
             created_at,
           };
         });
+        if (!res1 || !res2) return;
         const sort = req.query.sort as string;
-        // const { firstDate, lastDate } = req.query;
         const result = [...res1, ...res2].sort((a, b) => {
-          if (!sort || sort === 'desc') {
-            return b.created_at - a.created_at;
-          } else {
+          if (!sort || sort === 'asc') {
             return a.created_at - b.created_at;
+          } else {
+            return b.created_at - a.created_at;
           }
         });
-        // console.log(JSON.stringify(result));
-        if (req.query.cursor === 'left') {
-          const r = result.slice(-5);
-          res.send({ data: r });
-        } else {
-          const r = result.slice(0, 5);
-          res.send({ data: r });
+
+        let data: any = [];
+        if (!req.query.cursor || req.query.cursor === 'right') {
+          data = result.slice(0, 5);
         }
+        if (req.query.cursor === 'left') {
+          data = result.slice(-5);
+        }
+        res.send(data);
       }
     } catch (error) {
       next(error);
