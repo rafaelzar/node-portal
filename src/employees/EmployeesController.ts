@@ -49,7 +49,7 @@ class EmployeesController {
     }
   }
 
-  async averageRatingNonEyerate(req: Request, next: NextFunction) {
+  async getNonEyerateStats(req: Request, next: NextFunction) {
     try {
       const startDate = new Date(req.query.startDate as string);
       const endDate = new Date(req.query.endDate as string);
@@ -68,15 +68,13 @@ class EmployeesController {
       });
       if (!mentions.length) throw new ErrorHandler(404, 'Mentions for employee not found');
       queryObj.$and.push({ _id: { $in: mentions.map((mention) => mention.toObject().review) } });
-      console.log(JSON.stringify(queryObj.$and));
-      const reviews = await this.reviewModel.find(queryObj);
-      return this.starsAndRating(reviews);
+      return await this.reviewModel.find(queryObj);
     } catch (error) {
       next(error);
     }
   }
 
-  async averageRatingEyerate(req: Request, next: NextFunction) {
+  async getEyerateStats(req: Request, next: NextFunction) {
     try {
       const startDate = new Date(req.query.startDate as string);
       const endDate = new Date(req.query.endDate as string);
@@ -89,8 +87,7 @@ class EmployeesController {
           $lt: endDate,
         },
       });
-      const conversations = await this.conversationModel.find(queryObj);
-      return this.starsAndRating(conversations);
+      return await this.conversationModel.find(queryObj);
     } catch (error) {
       next(error);
     }
@@ -171,26 +168,25 @@ class EmployeesController {
         if (req.query.platform !== 'Eyerate') {
           const promiseResult = await Promise.all([
             this.getNonEyerateReviews(req, next),
-            this.averageRatingNonEyerate(req, next),
+            this.getNonEyerateStats(req, next),
           ]);
           res.send({
             data: promiseResult[0],
-            stats: promiseResult[1],
+            stats: this.averageStats(promiseResult[1] as []),
           });
         } else {
-          const promiseResult = await Promise.all([
-            this.getEyerateReviews(req, next),
-            this.averageRatingEyerate(req, next),
-          ]);
+          const promiseResult = await Promise.all([this.getEyerateReviews(req, next), this.getEyerateStats(req, next)]);
           res.send({
             data: promiseResult[0],
-            stats: promiseResult[1],
+            stats: this.averageStats(promiseResult[1] as []),
           });
         }
       } else {
         const promiseResult = await Promise.all([
           this.getEyerateReviews(req, next),
           this.getNonEyerateReviews(req, next),
+          this.getEyerateStats(req, next),
+          this.getNonEyerateStats(req, next),
         ]);
 
         const res1 = promiseResult[0];
@@ -226,7 +222,9 @@ class EmployeesController {
           data = result.slice(-5);
         }
 
-        const stats = this.starsAndRating([...(promiseResult[0] as []), ...(promiseResult[1] as [])]);
+        const eyerate = promiseResult[2] as [];
+        const noneyerate = promiseResult[3] as [];
+        const stats = this.averageStats([...eyerate, ...noneyerate]);
 
         res.send({ data, stats });
       }
@@ -237,7 +235,7 @@ class EmployeesController {
 
   // helper methods
 
-  starsAndRating(documentArray: any[]) {
+  averageStats(documentArray: any[]) {
     let sumReview = 0;
     let star5 = 0;
     let star4 = 0;
@@ -248,12 +246,15 @@ class EmployeesController {
     let Yelp = 0;
     let Google = 0;
     let GMB = 0;
+    let Eyerate = 0;
     for (const documentObj of documentArray) {
       if (documentObj.toObject().hasOwnProperty('platform')) {
         if (documentObj.toObject().platform === 'Weedmaps') Weedmaps++;
         if (documentObj.toObject().platform === 'Yelp') Yelp++;
         if (documentObj.toObject().platform === 'Google') Google++;
         if (documentObj.toObject().platfrom === 'GMB') GMB++;
+      } else {
+        Eyerate++;
       }
       if (documentObj.toObject().rating === 5) star5++;
       if (documentObj.toObject().rating === 4) star4++;
@@ -269,7 +270,7 @@ class EmployeesController {
       { stars: 2, percent: Math.round((star2 / documentArray.length) * 100), number: star2 },
       { stars: 1, percent: Math.round((star1 / documentArray.length) * 100), number: star1 },
     ];
-    const chartData = [Weedmaps, Yelp, Google, GMB];
+    const chartData = [Weedmaps, Yelp, Google, GMB, Eyerate];
     const averageRating = sumReview / documentArray.length;
     const numberOfReviews = documentArray.length;
     return { numberOfReviews, averageRating, starsData, chartData };
