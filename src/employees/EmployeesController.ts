@@ -50,32 +50,47 @@ class EmployeesController {
     }
   }
 
-  async averageRatingNonEyerate(req: Request, res: Response, next: NextFunction) {
+  async averageRatingNonEyerate(req: Request, next: NextFunction) {
     try {
+      const startDate = new Date(req.query.startDate as string);
+      const endDate = new Date(req.query.endDate as string);
+      endDate.setHours(endDate.getHours() + 24);
       const queryObj = {
-        $and: req.queryObj?.$and.filter((obj: any) => obj.hasOwnProperty('platform') || obj.hasOwnProperty('date')),
+        $and: req.queryObj?.$and.filter((obj: any) => obj.hasOwnProperty('platform')),
       };
+      queryObj.$and.push({
+        date: {
+          $gt: startDate,
+          $lt: endDate,
+        },
+      });
       const mentions = await this.mentionModel.find({
         employee: Types.ObjectId(req.params.id),
       });
       if (!mentions.length) throw new ErrorHandler(404, 'Mentions for employee not found');
       queryObj.$and.push({ _id: { $in: mentions.map((mention) => mention.toObject().review) } });
+      console.log(JSON.stringify(queryObj.$and));
       const reviews = await this.reviewModel.find(queryObj);
-      if (!reviews.length) throw new ErrorHandler(404, 'Reviews for employee not found');
       return this.starsAndRating(reviews);
     } catch (error) {
       next(error);
     }
   }
 
-  async averageRatingEyerate(req: Request, res: Response, next: NextFunction) {
+  async averageRatingEyerate(req: Request, next: NextFunction) {
     try {
-      const queryObj = {
-        $and: req.queryObj?.$and.filter((obj: any) => obj.hasOwnProperty('created_at')),
-      };
+      const startDate = new Date(req.query.startDate as string);
+      const endDate = new Date(req.query.endDate as string);
+      endDate.setHours(endDate.getHours() + 24);
+      const queryObj = { $and: [] as any };
       queryObj.$and.push({ employee: Types.ObjectId(req.params.id) }, { rating: { $ne: null } });
+      queryObj.$and.push({
+        created_at: {
+          $gt: startDate,
+          $lt: endDate,
+        },
+      });
       const conversations = await this.conversationModel.find(queryObj);
-      if (!conversations.length) throw new ErrorHandler(404, 'Conversation for employee with given query not found');
       return this.starsAndRating(conversations);
     } catch (error) {
       next(error);
@@ -141,16 +156,29 @@ class EmployeesController {
     try {
       if (req.query.platform) {
         if (req.query.platform !== 'Eyerate') {
-          res.send({ data: await this.getNonEyerateReviews(req, next) });
+          const promiseResult = await Promise.all([
+            this.getNonEyerateReviews(req, next),
+            this.averageRatingNonEyerate(req, next),
+          ]);
+          res.send({
+            data: promiseResult[0],
+            stats: promiseResult[1],
+          });
         } else {
-          res.send({ data: await this.getEyerateReviews(req, next) });
+          const promiseResult = await Promise.all([
+            this.getEyerateReviews(req, next),
+            this.averageRatingEyerate(req, next),
+          ]);
+          res.send({
+            data: promiseResult[0],
+            stats: promiseResult[1],
+          });
         }
       } else {
         const promiseResult = await Promise.all([
           this.getEyerateReviews(req, next),
           this.getNonEyerateReviews(req, next),
         ]);
-
         const res1 = promiseResult[0]?.map((e: any) => {
           const el = e.toObject();
           let rating = 0;
@@ -176,6 +204,7 @@ class EmployeesController {
             created_at,
           };
         });
+
         if (!res1 || !res2) return;
         const sort = req.query.sort as string;
         const result = [...res1, ...res2].sort((a, b) => {
@@ -193,7 +222,10 @@ class EmployeesController {
         if (req.query.cursor === 'left') {
           data = result.slice(-5);
         }
-        res.send(data);
+
+        const stats = this.starsAndRating([...(promiseResult[0] as []), ...(promiseResult[1] as [])]);
+
+        res.send({ data, stats });
       }
     } catch (error) {
       next(error);
