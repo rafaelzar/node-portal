@@ -1,9 +1,9 @@
 import { NextFunction, Request, Response } from 'express';
-import { Employee, Location, Review, Mention, Conversation, Customer } from 'eyerate';
+import { Employee, Review, Mention, Conversation, Customer } from 'eyerate';
 import EmployeeModel from './models/EmployeesModel';
 import { Model, Types } from 'mongoose';
 import ErrorHandler from '../errors/ErrorHandler';
-import LocationModel from './models/MentionModel';
+
 import ReviewModel from './models/ReviewsModel';
 import MentionModel from './models/MentionModel';
 import ConversationModel from './models/ConversationModels';
@@ -15,7 +15,6 @@ class EmployeesController {
     private mentionModel: Model<Mention>,
     private reviewModel: Model<Review>,
     private conversationModel: Model<Conversation>,
-    private customerModel: Model<Customer>,
   ) {}
 
   async validateJwt(req: Request, res: Response, next: NextFunction) {
@@ -131,7 +130,21 @@ class EmployeesController {
         .select('created_at rating ')
         .limit(5)
         .skip(skip);
-      return conversations;
+
+      let result: any = [];
+      if (conversations.length !== 0)
+        result = conversations.map((el: any) => {
+          const obj = el.toObject();
+          return {
+            _id: obj._id,
+            rating: obj.rating,
+            name: obj.customer.name,
+            phone: obj.customer.phone,
+            created_at: obj.created_at,
+          };
+        });
+
+      return result;
     } catch (error) {
       next(error);
     }
@@ -151,18 +164,7 @@ class EmployeesController {
           this.getNonEyerateReviews(req, next),
         ]);
 
-        const res1 = promiseResult[0]?.map((e: any) => {
-          const el = e.toObject();
-          let rating = 0;
-          !el.rating ? rating : (rating = el.rating);
-          return {
-            _id: el._id,
-            rating: rating,
-            name: el.customer.name,
-            phone: el.customer.phone,
-            created_at: el.created_at,
-          };
-        });
+        const res1 = promiseResult[0];
 
         const res2 = promiseResult[1]?.map((e: any, i) => {
           const el = e.toObject();
@@ -241,4 +243,4 @@ class EmployeesController {
   }
 }
 
-export = new EmployeesController(EmployeeModel, MentionModel, ReviewModel, ConversationModel, CustomerModel);
+export = new EmployeesController(EmployeeModel, MentionModel, ReviewModel, ConversationModel);
