@@ -138,7 +138,8 @@ class EmployeesController {
       const queryObj = {
         $and: req.queryObj?.$and.filter((obj: any) => !obj.hasOwnProperty('date') || obj.hasOwnProperty('keyword')),
       };
-      queryObj.$and.push({ employee: Types.ObjectId(req.params.id) });
+      queryObj.$and.push({ employee: Types.ObjectId(req.params.id) }, { rating: { $ne: null } });
+
       const countEyerate = await this.conversationModel.find(queryObj).countDocuments();
       if (req.query.cursor === 'left') {
         if (countEyerate < 5) {
@@ -155,6 +156,7 @@ class EmployeesController {
         isLast = limiter?.isLast;
         isFirst = limiter?.isFirst;
       }
+
       const conversations = await this.conversationModel
         .find(queryObj)
         .populate({ path: 'customer', select: 'name phone', model: CustomerModel })
