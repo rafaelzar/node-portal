@@ -118,12 +118,28 @@ class EmployeesController {
         isLast = limiter?.isLast;
         isFirst = limiter?.isFirst;
       }
-      const results = await this.reviewModel
+      const reviews = await this.reviewModel
         .find(queryObj)
         .sort({ date: req.query.sort as string })
         .select('date content rating platform author')
         .limit(5)
         .skip(skip);
+      let results = [];
+      if (reviews.length !== 0) {
+        results = reviews.map((e: any) => {
+          const el = e.toObject();
+          const name = el.author;
+          const created_at = el.date;
+          delete el.author;
+          delete el.date;
+          return {
+            ...el,
+            name,
+            created_at,
+          };
+        });
+      }
+
       return { results, countNonEyerate, isLast, isFirst };
     } catch (error) {
       next(error);
@@ -215,18 +231,7 @@ class EmployeesController {
         ]);
 
         const res1 = promiseResult[0]?.results;
-        const res2 = promiseResult[1]?.results.map((e: any, i) => {
-          const el = e.toObject();
-          const name = el.author;
-          const created_at = el.date;
-          delete el.author;
-          delete el.date;
-          return {
-            ...el,
-            name,
-            created_at,
-          };
-        });
+        const res2 = promiseResult[1]?.results;
 
         if (!res1 || !res2) return;
         const sort = req.query.sort as string;
