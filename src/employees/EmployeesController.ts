@@ -264,9 +264,203 @@ class EmployeesController {
         const eyerate = promiseResult[2] as [];
         const noneyerate = promiseResult[3] as [];
         const stats = this.averageStats([...eyerate, ...noneyerate]);
-
         res.send({ data, stats, isLast, isFirst });
       }
+    } catch (error) {
+      next(error);
+    }
+  }
+  private async reviewStatsAndMentions(employeeId: string, next: NextFunction) {
+    try {
+      const mentions = await this.mentionModel.find({ employee: Types.ObjectId(employeeId) });
+      let reviewIds: any[] = [];
+      if (mentions.length !== 0) {
+        reviewIds = mentions.map((el) => el.toObject().review);
+      }
+      console.log(reviewIds.map((el) => el.review));
+      const reviews = await this.reviewModel.aggregate().facet({
+        reviewSiteMentions: [
+          {
+            $match: { _id: { $in: reviewIds } },
+          },
+          {
+            $group: {
+              _id: { platform: '$platform' },
+              numOfReviews: { $sum: 1 },
+              platform: { $first: '$platform' },
+            },
+          },
+          {
+            $project: { _id: 0, platform: 1, numOfReviews: 1 },
+          },
+        ],
+        reviewStatsAllTime: [
+          {
+            $match: { _id: { $in: reviewIds } },
+          },
+          {
+            $group: {
+              _id: null,
+              mentions: { $sum: 1 },
+
+              sumRating: { $sum: '$rating' },
+            },
+          },
+          { $project: { _id: 0, mentions: 1, sumRating: 1 } },
+        ],
+        reviewStatsThisMonth: [
+          {
+            $project: {
+              year: { $year: '$date' },
+              month: { $month: '$date' },
+            },
+          },
+          {
+            $match: { _id: { $in: reviewIds }, year: new Date().getFullYear(), month: new Date().getMonth() + 1 },
+          },
+
+          {
+            $group: {
+              _id: null,
+              mentions: { $sum: 1 },
+            },
+          },
+          { $project: { _id: 0, mentions: 1 } },
+        ],
+      });
+      // .project({
+      //   reviewSiteMentions: 1,
+      //   reviewStatsThisMonth: {
+      //     $arrayElemAt: ['$reviewStatsThisMonth', 0],
+      //   },
+      //   reviewStatsAllTime: {
+      //     $arrayElemAt: ['$reviewStatsAllTime', 0],
+      //   },
+      // });
+
+      // const conversationsAllTime = await this.conversationModel
+      //   .find({ employee: Types.ObjectId(employeeId) })
+      //   .countDocuments();
+
+      const conversations = await this.conversationModel.aggregate().facet({
+        convThisMonth: [
+          {
+            $project: {
+              year: { $year: '$created_at' },
+              month: { $month: '$created_at' },
+              employee: 1,
+              rating: 1,
+            },
+          },
+          {
+            $match: {
+              employee: Types.ObjectId(employeeId),
+              year: new Date().getFullYear(),
+              month: new Date().getMonth() + 1,
+              rating: { $ne: null },
+            },
+          },
+          { $count: 'mentions' },
+        ],
+        convAllTime: [
+          {
+            $match: {
+              employee: Types.ObjectId(employeeId),
+              rating: { $ne: null },
+            },
+          },
+          {
+            $group: {
+              _id: null,
+              mentions: { $sum: 1 },
+              sumRating: { $sum: '$rating' },
+            },
+          },
+          {
+            $project: {
+              _id: 0,
+              mentions: 1,
+              sumRating: 1,
+            },
+          },
+        ],
+      });
+
+      const conv = conversations[0];
+      const rev = reviews[0];
+      let mentMonth = 0;
+      let mentAllTime = 0;
+      let sumRating = 0;
+      let mentAllTimeEyerate = 0;
+      if (conv.convThisMonth[0]?.mentions) {
+        mentMonth += conv.convThisMonth[0].mentions;
+      }
+      if (rev.reviewStatsThisMonth[0]?.mentions) {
+        mentMonth += rev.reviewStatsThisMonth[0].mentions;
+      }
+      if (conv.convAllTime[0]?.mentions) {
+        mentAllTime += conv.convAllTime[0].mentions;
+        mentAllTimeEyerate = conv.convAllTime[0].mentions;
+      }
+      if (rev.reviewStatsAllTime[0]?.mentions) {
+        mentAllTime += rev.reviewStatsAllTime[0].mentions;
+      }
+      if (conv.convAllTime[0]?.sumRating) {
+        sumRating += conv.convAllTime[0].sumRating;
+      }
+      if (rev.reviewStatsAllTime[0]?.sumRating) {
+        sumRating += rev.reviewStatsAllTime[0].sumRating;
+      }
+      const avgAllTime = sumRating / mentAllTime;
+
+      rev.reviewSiteMentions.push({ numOfReviews: mentAllTimeEyerate, platform: 'Eyerate' });
+
+      return {
+        reviewStats: {
+          mentionsThisMonth: mentMonth,
+          mentionsAllTime: mentAllTime,
+          averageRatingAllTime: avgAllTime,
+        },
+        reviewSiteMentions: rev.reviewSiteMentions,
+      };
+    } catch (error) {
+      next(error);
+    }
+  }
+  async userStats(req: Request, res: Response, next: NextFunction) {
+    try {
+      const employeeId = req.params.id;
+
+      // ------------- potential stats for payments ------------
+
+      // const leaderBoardArr = await this.paymentModel
+      //   .aggregate()
+      //   .match({ employee: Types.ObjectId(employeeId) })
+      //   .group({ _id: { employeeId: '$employee' }, allTimeEarnings: { $sum: '$amount' } })
+
+      //   .sort({ allTimeEarnings: -1 })
+      //   .project({ count: { $sum: 1 } });
+      // console.log(leaderBoardArr);
+      // const allTimeEarningsArr = await this.paymentModel
+      //   .aggregate()
+      //   .match({ employee: Types.ObjectId(employeeId) })
+      //   .group({ _id: { employeeId: '$employee' }, allTimeEarnings: { $sum: '$amount' } })
+      //   .project({ _id: 0 });
+
+      // const thisMonthEarningsArr = await this.paymentModel
+      //   .aggregate()
+      //   .match({
+      //     employee: Types.ObjectId(employeeId),
+      //     'payment_period.year': new Date().getFullYear(),
+      //     'payment_period.month': new Date().getMonth() + 1,
+      //   })
+      //   .group({ _id: { employeeId: '$employee' }, thisMonthEarnings: { $sum: '$amount' } })
+      //   .project({ _id: 0 });
+      // res.send({ earningStats: { ...allTimeEarningsArr[0], ...thisMonthEarningsArr[0] } });
+
+      //----------
+      const resp = await this.reviewStatsAndMentions(employeeId, next);
+      res.send(resp);
     } catch (error) {
       next(error);
     }
@@ -286,6 +480,7 @@ class EmployeesController {
     let Google = 0;
     let GMB = 0;
     let Eyerate = 0;
+
     for (const documentObj of documentArray) {
       if (documentObj.toObject().hasOwnProperty('platform')) {
         if (documentObj.toObject().platform === 'Weedmaps') Weedmaps++;
