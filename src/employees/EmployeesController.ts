@@ -282,16 +282,16 @@ class EmployeesController {
     let star2 = 0;
     let star1 = 0;
     let Weedmaps = 0;
-    let Yelp = 0;
+    // let Yelp = 0;
     let Google = 0;
-    let GMB = 0;
+    // let GMB = 0;
     let Eyerate = 0;
     for (const documentObj of documentArray) {
       if (documentObj.toObject().hasOwnProperty('platform')) {
         if (documentObj.toObject().platform === 'Weedmaps') Weedmaps++;
-        if (documentObj.toObject().platform === 'Yelp') Yelp++;
+        // if (documentObj.toObject().platform === 'Yelp') Yelp++;
         if (documentObj.toObject().platform === 'Google') Google++;
-        if (documentObj.toObject().platfrom === 'GMB') GMB++;
+        // if (documentObj.toObject().platfrom === 'GMB') GMB++;
       } else {
         Eyerate++;
       }
@@ -309,7 +309,7 @@ class EmployeesController {
       { stars: 2, percent: Math.round((star2 / documentArray.length) * 100), number: star2 },
       { stars: 1, percent: Math.round((star1 / documentArray.length) * 100), number: star1 },
     ];
-    const chartData = [Weedmaps, Yelp, Google, GMB, Eyerate];
+    const chartData = [Weedmaps, Google, Eyerate];
     const averageRating = sumReview / documentArray.length;
     const numberOfReviews = documentArray.length;
     return { numberOfReviews, averageRating, starsData, chartData };
