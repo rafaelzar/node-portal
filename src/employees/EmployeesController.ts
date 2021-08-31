@@ -3,11 +3,13 @@ import { Employee, Review, Mention, Conversation, Customer } from 'eyerate';
 import EmployeeModel from './models/EmployeesModel';
 import { Model, Types } from 'mongoose';
 import ErrorHandler from '../errors/ErrorHandler';
-
 import ReviewModel from './models/ReviewsModel';
 import MentionModel from './models/MentionModel';
 import ConversationModel from './models/ConversationModels';
 import CustomerModel from './models/CustomerModel';
+import plaidClient from '../plaid/plaid.config';
+import PlaidAccountModel, { PlaidAccount } from './models/PlaidAccountModel';
+import bcrypt from 'bcrypt';
 
 class EmployeesController {
   constructor(
@@ -15,6 +17,7 @@ class EmployeesController {
     private mentionModel: Model<Mention>,
     private reviewModel: Model<Review>,
     private conversationModel: Model<Conversation>,
+    private plaidAccountModel: Model<PlaidAccount>,
   ) {}
 
   async validateJwt(req: Request, res: Response, next: NextFunction) {
@@ -272,6 +275,55 @@ class EmployeesController {
     }
   }
 
+  async createLinkToken(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { link_token } = await plaidClient.createLinkToken({
+        client_name: 'K7 Tech Edu',
+        country_codes: ['US'],
+        language: 'en',
+        user: {
+          client_user_id: req.params.id,
+        },
+        products: ['auth'],
+      });
+      res.send({ link_token });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async exchangeToken(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { access_token } = await plaidClient.exchangePublicToken(req.body.public_token);
+      const salt = bcrypt.genSaltSync(5);
+      const hash = await bcrypt.hash(access_token, salt);
+      const plaidAccount = await this.plaidAccountModel.create({
+        employee_id: Types.ObjectId(req.params.id),
+        access_token: hash,
+      });
+      const employee = await this.employeeModel.findByIdAndUpdate(Types.ObjectId(req.params.id), {
+        plaid_account: plaidAccount._id,
+      });
+      const identityResponse = await plaidClient.getIdentity(access_token);
+      res.send({ identityResponse });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getTransactions(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { transactions } = await plaidClient.getTransactions(
+        req.cookies['access_token'],
+        req.query.startDate as string,
+        req.query.endDate as string,
+      );
+      res.send({ transactions });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // helper methods
 
   averageStats(documentArray: any[]) {
@@ -330,4 +382,4 @@ class EmployeesController {
   }
 }
 
-export = new EmployeesController(EmployeeModel, MentionModel, ReviewModel, ConversationModel);
+export = new EmployeesController(EmployeeModel, MentionModel, ReviewModel, ConversationModel, PlaidAccountModel);
