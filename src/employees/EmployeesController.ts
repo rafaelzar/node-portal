@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { Employee, Review, Mention, Conversation, Customer } from 'eyerate';
+import { Employee, Review, Mention, Conversation, Customer, Payment } from 'eyerate';
 import EmployeeModel from './models/EmployeesModel';
 import { Model, Types } from 'mongoose';
 import ErrorHandler from '../errors/ErrorHandler';
@@ -8,6 +8,7 @@ import ReviewModel from './models/ReviewsModel';
 import MentionModel from './models/MentionModel';
 import ConversationModel from './models/ConversationModels';
 import CustomerModel from './models/CustomerModel';
+import PaymentModel from './models/PaymentModel';
 
 class EmployeesController {
   constructor(
@@ -15,6 +16,7 @@ class EmployeesController {
     private mentionModel: Model<Mention>,
     private reviewModel: Model<Review>,
     private conversationModel: Model<Conversation>,
+    private paymentModel: Model<Payment>,
   ) {}
 
   async validateJwt(req: Request, res: Response, next: NextFunction) {
@@ -113,7 +115,7 @@ class EmployeesController {
         isLast = limiter?.isLast;
         isFirst = limiter?.isFirst;
       }
-      if (!req.query.cursor || req.query.cursor === 'right') {
+      if (req.query.cursor === 'right') {
         const limiter = this.paginationLimiterRight(countNonEyerate, req.query.lastDate);
         isLast = limiter?.isLast;
         isFirst = limiter?.isFirst;
@@ -167,7 +169,7 @@ class EmployeesController {
         isLast = limiter?.isLast;
         isFirst = limiter?.isFirst;
       }
-      if (!req.query.cursor || req.query.cursor === 'right') {
+      if (req.query.cursor === 'right') {
         const limiter = this.paginationLimiterRight(countEyerate, req.query.lastDate);
         isLast = limiter?.isLast;
         isFirst = limiter?.isFirst;
@@ -193,6 +195,7 @@ class EmployeesController {
             created_at: obj.created_at,
           };
         });
+
       return { results, countEyerate, isLast, isFirst };
     } catch (error) {
       next(error);
@@ -277,12 +280,11 @@ class EmployeesController {
       if (mentions.length !== 0) {
         reviewIds = mentions.map((el) => el.toObject().review);
       }
-      console.log(reviewIds.map((el) => el.review));
-      const reviews = await this.reviewModel.aggregate().facet({
+
+      const reviews = this.mentionModel.aggregate().facet({
         reviewSiteMentions: [
-          {
-            $match: { _id: { $in: reviewIds } },
-          },
+          { $match: { employee: Types.ObjectId(employeeId), review: { $exists: true } } },
+
           {
             $group: {
               _id: { platform: '$platform' },
@@ -295,19 +297,22 @@ class EmployeesController {
           },
         ],
         reviewStatsAllTime: [
+          { $match: { employee: Types.ObjectId(employeeId) } },
           {
-            $match: { _id: { $in: reviewIds } },
+            $lookup: { from: 'Reviews', localField: 'review', foreignField: '_id', as: 'rev' },
           },
+          { $unwind: { path: '$rev' } },
           {
             $group: {
               _id: null,
               mentions: { $sum: 1 },
 
-              sumRating: { $sum: '$rating' },
+              sumRating: { $sum: '$rev.rating' },
             },
           },
           { $project: { _id: 0, mentions: 1, sumRating: 1 } },
         ],
+        mentionsAllTime: [{ $match: { employee: Types.ObjectId(employeeId) } }, { $count: 'mentions' }],
         reviewStatsThisMonth: [
           {
             $project: {
@@ -328,21 +333,8 @@ class EmployeesController {
           { $project: { _id: 0, mentions: 1 } },
         ],
       });
-      // .project({
-      //   reviewSiteMentions: 1,
-      //   reviewStatsThisMonth: {
-      //     $arrayElemAt: ['$reviewStatsThisMonth', 0],
-      //   },
-      //   reviewStatsAllTime: {
-      //     $arrayElemAt: ['$reviewStatsAllTime', 0],
-      //   },
-      // });
 
-      // const conversationsAllTime = await this.conversationModel
-      //   .find({ employee: Types.ObjectId(employeeId) })
-      //   .countDocuments();
-
-      const conversations = await this.conversationModel.aggregate().facet({
+      const conversations = this.conversationModel.aggregate().facet({
         convThisMonth: [
           {
             $project: {
@@ -385,13 +377,15 @@ class EmployeesController {
           },
         ],
       });
-
-      const conv = conversations[0];
-      const rev = reviews[0];
+      const [c, v] = await Promise.all([conversations, reviews]);
+      const conv = c[0];
+      const rev = v[0];
       let mentMonth = 0;
       let mentAllTime = 0;
       let sumRating = 0;
       let mentAllTimeEyerate = 0;
+      let numOfReviews = 0;
+
       if (conv.convThisMonth[0]?.mentions) {
         mentMonth += conv.convThisMonth[0].mentions;
       }
@@ -401,9 +395,10 @@ class EmployeesController {
       if (conv.convAllTime[0]?.mentions) {
         mentAllTime += conv.convAllTime[0].mentions;
         mentAllTimeEyerate = conv.convAllTime[0].mentions;
+        numOfReviews += conv.convAllTime[0].mentions;
       }
-      if (rev.reviewStatsAllTime[0]?.mentions) {
-        mentAllTime += rev.reviewStatsAllTime[0].mentions;
+      if (rev.mentionsAllTime[0]?.mentions) {
+        mentAllTime += rev.mentionsAllTime[0].mentions;
       }
       if (conv.convAllTime[0]?.sumRating) {
         sumRating += conv.convAllTime[0].sumRating;
@@ -411,10 +406,15 @@ class EmployeesController {
       if (rev.reviewStatsAllTime[0]?.sumRating) {
         sumRating += rev.reviewStatsAllTime[0].sumRating;
       }
-      const avgAllTime = sumRating / mentAllTime;
 
-      rev.reviewSiteMentions.push({ numOfReviews: mentAllTimeEyerate, platform: 'Eyerate' });
-
+      // just mentions that actually have review prop
+      if (rev.reviewStatsAllTime[0]?.mentions) {
+        numOfReviews += rev.reviewStatsAllTime[0].mentions;
+      }
+      const avgAllTime = sumRating / numOfReviews;
+      if (mentAllTimeEyerate !== 0) {
+        rev.reviewSiteMentions.push({ numOfReviews: mentAllTimeEyerate, platform: 'Eyerate' });
+      }
       return {
         reviewStats: {
           mentionsThisMonth: mentMonth,
@@ -433,34 +433,68 @@ class EmployeesController {
 
       // ------------- potential stats for payments ------------
 
-      // const leaderBoardArr = await this.paymentModel
-      //   .aggregate()
-      //   .match({ employee: Types.ObjectId(employeeId) })
-      //   .group({ _id: { employeeId: '$employee' }, allTimeEarnings: { $sum: '$amount' } })
+      const leaderboardProm = this.paymentModel
+        .aggregate()
+        .facet({
+          allTimeEarnings: [
+            { $group: { _id: { employeeId: '$employee' }, allTimeEarnings: { $sum: '$amount' } } },
+            {
+              $sort: {
+                allTimeEarnings: -1,
+              },
+            },
+          ],
+        })
+        .project({ rank: { $indexOfArray: ['$allTimeEarnings._id.employeeId', Types.ObjectId(employeeId)] } });
 
-      //   .sort({ allTimeEarnings: -1 })
-      //   .project({ count: { $sum: 1 } });
-      // console.log(leaderBoardArr);
-      // const allTimeEarningsArr = await this.paymentModel
-      //   .aggregate()
-      //   .match({ employee: Types.ObjectId(employeeId) })
-      //   .group({ _id: { employeeId: '$employee' }, allTimeEarnings: { $sum: '$amount' } })
-      //   .project({ _id: 0 });
+      const allTimeEarningsArr = this.paymentModel
+        .aggregate()
+        .match({ employee: Types.ObjectId(employeeId) })
+        .group({ _id: { employeeId: '$employee' }, allTimeEarnings: { $sum: '$amount' } })
+        .project({ _id: 0 });
 
-      // const thisMonthEarningsArr = await this.paymentModel
-      //   .aggregate()
-      //   .match({
-      //     employee: Types.ObjectId(employeeId),
-      //     'payment_period.year': new Date().getFullYear(),
-      //     'payment_period.month': new Date().getMonth() + 1,
-      //   })
-      //   .group({ _id: { employeeId: '$employee' }, thisMonthEarnings: { $sum: '$amount' } })
-      //   .project({ _id: 0 });
-      // res.send({ earningStats: { ...allTimeEarningsArr[0], ...thisMonthEarningsArr[0] } });
+      const thisMonthEarningsArr = this.paymentModel
+        .aggregate()
+        .match({
+          employee: Types.ObjectId(employeeId),
+          'payment_period.year': new Date().getFullYear(),
+          'payment_period.month': new Date().getMonth() + 1,
+        })
+        .group({ _id: { employeeId: '$employee' }, thisMonthEarnings: { $sum: '$amount' } })
+        .project({ _id: 0 });
 
-      //----------
-      const resp = await this.reviewStatsAndMentions(employeeId, next);
-      res.send(resp);
+      const reviewStatsAndMentionsProm = this.reviewStatsAndMentions(employeeId, next);
+      const nonEyerateProm = this.getNonEyerateReviews(req, next);
+      const eyerateProm = this.getEyerateReviews(req, next);
+
+      const [reviewStatsAndMentions, nonEyerate, eyerate, allTime, thisMonth, leaderboard] = await Promise.all([
+        reviewStatsAndMentionsProm,
+        nonEyerateProm,
+        eyerateProm,
+        allTimeEarningsArr,
+        thisMonthEarningsArr,
+        leaderboardProm,
+      ]);
+
+      const nonEyerateRes = nonEyerate?.results as any[];
+      const eyerateRes = eyerate?.results as any[];
+      const sortedMentions = [...nonEyerateRes, ...eyerateRes]
+        .sort((a, b) => {
+          return b.created_at - a.created_at;
+        })
+        .slice(0, 3);
+      const lRank = leaderboard[0]?.rank !== -1 ? leaderboard[0]?.rank : 0;
+      const earningsStats = {
+        allTimeEarnings: allTime[0]?.allTimeEarnings || 0,
+        thisMonthEarnings: thisMonth[0]?.thisMonthEarnings || 0,
+        leaderboardRank: lRank,
+      };
+
+      res.send({
+        ...reviewStatsAndMentions,
+        reviewMentions: sortedMentions,
+        earningsStats,
+      });
     } catch (error) {
       next(error);
     }
@@ -525,4 +559,4 @@ class EmployeesController {
   }
 }
 
-export = new EmployeesController(EmployeeModel, MentionModel, ReviewModel, ConversationModel);
+export = new EmployeesController(EmployeeModel, MentionModel, ReviewModel, ConversationModel, PaymentModel);
