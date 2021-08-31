@@ -10,7 +10,7 @@ import CustomerModel from './models/CustomerModel';
 import PaymentModel from './models/PaymentModel';
 import plaidClient from '../plaid/plaid.config';
 import PlaidAccountModel, { PlaidAccount } from './models/PlaidAccountModel';
-import bcrypt from 'bcrypt';
+import crypto from 'crypto-js';
 
 class EmployeesController {
   constructor(
@@ -522,13 +522,12 @@ class EmployeesController {
   async exchangeToken(req: Request, res: Response, next: NextFunction) {
     try {
       const { access_token } = await plaidClient.exchangePublicToken(req.body.public_token);
-      const salt = bcrypt.genSaltSync(5);
-      const hash = await bcrypt.hash(access_token, salt);
+      const encryptedAES = crypto.AES.encrypt(access_token, 'My Secret Passphrase');
       const plaidAccount = await this.plaidAccountModel.create({
         employee_id: Types.ObjectId(req.params.id),
-        access_token: hash,
+        access_token: encryptedAES,
       });
-      const employee = await this.employeeModel.findByIdAndUpdate(Types.ObjectId(req.params.id), {
+      await this.employeeModel.findByIdAndUpdate(Types.ObjectId(req.params.id), {
         plaid_account: plaidAccount._id,
       });
       const identityResponse = await plaidClient.getIdentity(access_token);
@@ -538,14 +537,26 @@ class EmployeesController {
     }
   }
 
+  async getBalance(req: Request, res: Response, next: NextFunction) {
+    const plaidAccount = await this.plaidAccountModel.findOne({ employee_id: Types.ObjectId(req.params.id) });
+    if (!plaidAccount) throw new ErrorHandler(404, 'This employee does not have plaid account');
+    const { accounts } = await plaidClient.getBalance(plaidAccount.access_token);
+  }
+
   async getTransactions(req: Request, res: Response, next: NextFunction) {
     try {
-      const { transactions } = await plaidClient.getTransactions(
-        req.cookies['access_token'],
-        req.query.startDate as string,
-        req.query.endDate as string,
-      );
-      res.send({ transactions });
+      const plaidAccount = await this.plaidAccountModel.findOne({ employee_id: Types.ObjectId(req.params.id) });
+      if (!plaidAccount) res.send([]);
+      else {
+        const decryptedBytes = crypto.AES.decrypt(plaidAccount.access_token, 'My Secret Passphrase');
+        const plaintext = decryptedBytes.toString(crypto.enc.Utf8);
+        const { transactions } = await plaidClient.getTransactions(
+          plaintext,
+          req.query.startDate as string,
+          req.query.endDate as string,
+        );
+        res.send({ transactions });
+      }
     } catch (error) {
       next(error);
     }

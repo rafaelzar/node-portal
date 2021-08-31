@@ -1,10 +1,20 @@
 import { Schema, model } from 'mongoose';
-// import { PlaidAccount } from 'eyerate';
+import { ObjectId } from 'mongodb';
+
 export interface PlaidAccount {
-  employee_id: string;
   access_token: string;
 }
-export const PlaidAccountSchema: Schema = new Schema({}, { collection: 'PlaidAccounts' });
+export const PlaidAccountSchema: Schema = new Schema(
+  {
+    access_token: {
+      type: String,
+    },
+    employee_id: {
+      type: ObjectId,
+    },
+  },
+  { collection: 'PlaidAccounts' },
+);
 
 const PlaidAccountModel = model<PlaidAccount>('PlaidAccounts', PlaidAccountSchema);
 export default PlaidAccountModel;
