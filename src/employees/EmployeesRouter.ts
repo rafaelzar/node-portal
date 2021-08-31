@@ -24,6 +24,7 @@ class EmployeesRouter {
     this._router.get('/validate-jwt', validateJWT, this._controller.validateJwt);
     this._router.patch('/:id', validateMongoId, updateEmployeeDto, validateJWT, this._controller.updateEmployee);
     this._router.get('/reviews/:id', validateMongoId, validateQueryParam, this._controller.getReviews);
+    this._router.get('/stats/:id', validateMongoId, validateQueryParam, this._controller.userStats);
     this._router.get('/create-link-token/:id', validateMongoId, validateJWT, this._controller.createLinkToken);
     this._router.post(
       '/token-exchange/:id',
