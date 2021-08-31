@@ -9,7 +9,7 @@ export const PlaidAccountSchema: Schema = new Schema(
     access_token: {
       type: String,
     },
-    employee_id: {
+    employee: {
       type: ObjectId,
     },
   },

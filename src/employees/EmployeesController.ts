@@ -524,7 +524,7 @@ class EmployeesController {
       const { access_token } = await plaidClient.exchangePublicToken(req.body.public_token);
       const encryptedAES = crypto.AES.encrypt(access_token, 'My Secret Passphrase');
       const plaidAccount = await this.plaidAccountModel.create({
-        employee_id: Types.ObjectId(req.params.id),
+        employee: Types.ObjectId(req.params.id),
         access_token: encryptedAES,
       });
       await this.employeeModel.findByIdAndUpdate(Types.ObjectId(req.params.id), {
