@@ -7,9 +7,9 @@ export const validateQueryParam = (req: Request, _: Response, next: NextFunction
 
     if (req.query.platform) {
       const { platform } = req.query;
-      const platofrmTypes = ['Weedmaps', 'Yelp', 'Google', 'GMB', 'Eyerate'];
+      const platofrmTypes = ['Weedmaps', 'Google', 'Eyerate'];
       if (!platofrmTypes.includes(platform as string))
-        throw new ErrorHandler(400, 'Platform must match one of the following Weedmaps, Yelp, Google, GMB or Eyerate');
+        throw new ErrorHandler(400, 'Platform must match one of the following Weedmaps, Google or Eyerate');
       if (platform !== 'Eyerate') queryObj.$and.push({ platform: platform });
     }
 
