@@ -1,12 +1,12 @@
 {
 	"info": {
-		"_postman_id": "f9f3a5ff-e815-4fa4-b1c3-5b825d74132e",
+		"_postman_id": "7b7d292d-7458-4f69-942a-e2c65a3515c0",
 		"name": "employee-portal-backend",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "get nonEyeRate reviews",
+			"name": "get reviews",
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -184,6 +184,77 @@
 					"body": "{\n    \"data\": [\n        {\n            \"_id\": \"6090aabf5036240723ef25cf\",\n            \"author\": \"Daionna\",\n            \"content\": \"Great customer service Very friendly and great customer service love her Hadley\",\n            \"date\": \"2021-05-02T22:51:42.000Z\",\n            \"rating\": 5,\n            \"platform\": \"Weedmaps\"\n        }\n    ],\n    \"pageCount\": 1\n}"
 				}
 			]
+		},
+		{
+			"name": "get stats",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{eyerate_host}}/employees/stats/:id?sort=desc",
+					"host": [
+						"{{eyerate_host}}"
+					],
+					"path": [
+						"employees",
+						"stats",
+						":id"
+					],
+					"query": [
+						{
+							"key": "sort",
+							"value": "desc"
+						},
+						{
+							"key": "startDate",
+							"value": "2016-01-05",
+							"disabled": true
+						},
+						{
+							"key": "endDate",
+							"value": "2021-08-23",
+							"disabled": true
+						},
+						{
+							"key": "startDate",
+							"value": "2016-01-05",
+							"disabled": true
+						},
+						{
+							"key": "endDate",
+							"value": "2021-08-23",
+							"disabled": true
+						},
+						{
+							"key": "lastDate",
+							"value": "2021-05-13T08:00:00.000Z",
+							"disabled": true
+						},
+						{
+							"key": "platform",
+							"value": "Weedmaps",
+							"disabled": true
+						},
+						{
+							"key": "cursor",
+							"value": "right",
+							"disabled": true
+						},
+						{
+							"key": "sort",
+							"value": "a",
+							"disabled": true
+						}
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "5fb82fe494b1960012e1a95a"
+						}
+					]
+				}
+			},
+			"response": []
 		},
 		{
 			"name": "get user",
@@ -464,70 +535,6 @@
 					"header": [],
 					"cookie": [],
 					"body": ""
-				}
-			]
-		},
-		{
-			"name": "get revenue",
-			"request": {
-				"method": "GET",
-				"header": [],
-				"url": {
-					"raw": "{{eyerate_host}}/employees/revenue/:id?startDate&endDate",
-					"host": [
-						"{{eyerate_host}}"
-					],
-					"path": [
-						"employees",
-						"revenue",
-						":id"
-					],
-					"query": [
-						{
-							"key": "startDate",
-							"value": null
-						},
-						{
-							"key": "endDate",
-							"value": null
-						}
-					],
-					"variable": [
-						{
-							"key": "id",
-							"value": "60261996b55f7d0012ba8104"
-						}
-					]
-				}
-			},
-			"response": [
-				{
-					"name": "get revenue",
-					"originalRequest": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{eyerate_host}}/employees/revenue/:id",
-							"host": [
-								"{{eyerate_host}}"
-							],
-							"path": [
-								"employees",
-								"revenue",
-								":id"
-							],
-							"variable": [
-								{
-									"key": "id",
-									"value": "60261996b55f7d0012ba8104"
-								}
-							]
-						}
-					},
-					"_postman_previewlanguage": null,
-					"header": null,
-					"cookie": [],
-					"body": "[\n    {\n        \"_id\": \"60c01f285c84ed40e833ee1d\",\n        \"mentions\": [\n            \"60bfb0105bf276f0465f8302\",\n            \"60bfb0105bf276f0465f8303\"\n        ],\n        \"events\": [\n            {\n                \"status\": \"IN_PROCESS\",\n                \"date\": \"2021-06-09T01:53:44.750Z\"\n            },\n            {\n                \"status\": \"PAID\",\n                \"date\": \"2021-06-14T21:06:58.812Z\"\n            }\n        ],\n        \"employee\": \"60261996b55f7d0012ba8104\",\n        \"location\": \"6022d59ff4302e0012ae246b\",\n        \"amount\": 10,\n        \"check_id\": \"775da258dba949e7bf620d45bc43c116\",\n        \"payment_period\": {\n            \"year\": 2021,\n            \"month\": 4\n        },\n        \"__v\": 0,\n        \"sent_by\": \"mike@eyeratebusiness.com\"\n    },\n    {\n        \"_id\": \"60cb93f72eaff41ec79bdb00\",\n        \"mentions\": [\n            \"60bfb0105bf276f0465f8301\"\n        ],\n        \"events\": [\n            {\n                \"status\": \"PAID\",\n                \"date\": \"2021-04-09T06:47:36.000Z\"\n            }\n        ],\n        \"employee\": \"60261996b55f7d0012ba8104\",\n        \"location\": \"6022d59ff4302e0012ae246b\",\n        \"check_id\": \"d60e6659c22e446985d419c44f54556e\",\n        \"amount\": 5,\n        \"payment_period\": {\n            \"month\": 2,\n            \"year\": 2021\n        },\n        \"sent_by\": \"mike@eyeratebusiness.com\"\n    }\n]"
 				}
 			]
 		}
