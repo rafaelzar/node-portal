@@ -438,8 +438,6 @@ class EmployeesController {
     try {
       const employeeId = req.params.id;
 
-      // ------------- potential stats for payments ------------
-
       const leaderboardProm = this.paymentModel
         .aggregate()
         .facet({
@@ -474,14 +472,18 @@ class EmployeesController {
       const nonEyerateProm = this.getNonEyerateReviews(req, next);
       const eyerateProm = this.getEyerateReviews(req, next);
 
-      const [reviewStatsAndMentions, nonEyerate, eyerate, allTime, thisMonth, leaderboard] = await Promise.all([
-        reviewStatsAndMentionsProm,
-        nonEyerateProm,
-        eyerateProm,
-        allTimeEarningsArr,
-        thisMonthEarningsArr,
-        leaderboardProm,
-      ]);
+      const earningsProm = this.getEarningStats(employeeId, next);
+
+      const [reviewStatsAndMentions, nonEyerate, eyerate, allTime, thisMonth, leaderboard, earnings] =
+        await Promise.all([
+          reviewStatsAndMentionsProm,
+          nonEyerateProm,
+          eyerateProm,
+          allTimeEarningsArr,
+          thisMonthEarningsArr,
+          leaderboardProm,
+          earningsProm,
+        ]);
 
       const nonEyerateRes = nonEyerate?.results as any[];
       const eyerateRes = eyerate?.results as any[];
@@ -492,6 +494,8 @@ class EmployeesController {
         .slice(0, 3);
       const lRank = leaderboard[0]?.rank !== -1 ? leaderboard[0]?.rank : 0;
       const earningsStats = {
+        earningsAvailable: earnings?.earningsAvailable || 0,
+        lastPayment: earnings?.lastPayment || 0,
         allTimeEarnings: allTime[0]?.allTimeEarnings || 0,
         thisMonthEarnings: thisMonth[0]?.thisMonthEarnings || 0,
         leaderboardRank: lRank,
@@ -551,6 +555,42 @@ class EmployeesController {
     queryObj.$and.push({ 'events.date': eventDate[0] });
     const revenue = await this.paymentModel.find(queryObj);
     res.send(revenue);
+  }
+
+  private async getEarningStats(employeeId: string, next: NextFunction) {
+    try {
+      const earnings = await this.paymentModel
+        .aggregate()
+        .facet({
+          earningsAvailable: [
+            { $match: { employee: Types.ObjectId(employeeId), check_id: { $exists: false } } },
+
+            { $group: { _id: null, available: { $sum: '$amount' } } },
+            {
+              $project: {
+                _id: 0,
+                available: 1,
+              },
+            },
+          ],
+          lastPayment: [
+            { $match: { employee: Types.ObjectId(employeeId), check_id: { $exists: true } } },
+            {
+              $addFields: { lastPayment: { $last: '$events' } },
+            },
+            { $sort: { 'lastPayment.date': -1 } },
+            { $project: { _id: 0, amount: '$amount' } },
+          ],
+        })
+        .project({
+          earningsAvailable: { $ifNull: [{ $arrayElemAt: ['$earningsAvailable.available', 0] }, 0] },
+          lastPayment: { $ifNull: [{ $arrayElemAt: ['$lastPayment.amount', 0] }, 0] },
+        });
+      const { earningsAvailable, lastPayment } = earnings[0];
+      return { earningsAvailable, lastPayment };
+    } catch (error) {
+      next(error);
+    }
   }
 
   // helper methods
