@@ -6,7 +6,7 @@ import { validateMongoId } from '../middleware/validate-mongo-id';
 import autoBind from 'auto-bind';
 import { validateQueryParam } from '../middleware/validate-query-param';
 import { tokenExchangeDto } from '../middleware/dto/token-exchange.dto';
-import { validateDateRevenue } from '../middleware/validate-date.revenue';
+import { validateDate } from '../middleware/validate-date';
 
 class EmployeesRouter {
   private _router = Router();
@@ -34,7 +34,7 @@ class EmployeesRouter {
       validateJWT,
       this._controller.exchangeToken,
     );
-    this._router.get('/revenue/:id', validateJWT, validateDateRevenue, validateMongoId, this._controller.getRevenue);
+    this._router.get('/revenue/:id', validateJWT, validateDate, validateMongoId, this._controller.getRevenue);
   }
 }
 
