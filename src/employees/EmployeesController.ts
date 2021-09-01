@@ -420,23 +420,6 @@ class EmployeesController {
         rev.reviewSiteMentions.push({ numOfReviews: mentAllTimeEyerate, platform: 'Eyerate' });
       }
 
-      // make order of platforms weedmaps => google => eyerate
-      const reviewSiteMentionsReodered = [];
-
-      rev.reviewSiteMentions.forEach((el: any) => {
-        switch (el.platform) {
-          case 'Weedmaps':
-            reviewSiteMentionsReodered[0] = el.numOfReviews;
-            break;
-          case 'Google':
-            reviewSiteMentionsReodered[1] = el.numOfReviews;
-            break;
-          case 'Eyerate':
-            reviewSiteMentionsReodered[2] = el.numOfReviews;
-            break;
-        }
-      });
-
       return {
         reviewStats: {
           mentionsThisMonth: mentMonth,
