@@ -473,7 +473,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "{{eyerate_host}}/employees/revenue/:id",
+					"raw": "{{eyerate_host}}/employees/revenue/:id?startDate&endDate",
 					"host": [
 						"{{eyerate_host}}"
 					],
@@ -481,6 +481,16 @@
 						"employees",
 						"revenue",
 						":id"
+					],
+					"query": [
+						{
+							"key": "startDate",
+							"value": null
+						},
+						{
+							"key": "endDate",
+							"value": null
+						}
 					],
 					"variable": [
 						{
