@@ -279,10 +279,6 @@ class EmployeesController {
   private async reviewStatsAndMentions(employeeId: string, next: NextFunction) {
     try {
       const mentions = await this.mentionModel.find({ employee: Types.ObjectId(employeeId) });
-      let reviewIds: any[] = [];
-      if (mentions.length !== 0) {
-        reviewIds = mentions.map((el) => el.toObject().review);
-      }
 
       const reviews = this.mentionModel.aggregate().facet({
         reviewSiteMentions: [
@@ -321,10 +317,15 @@ class EmployeesController {
             $project: {
               year: { $year: '$date' },
               month: { $month: '$date' },
+              employee: 1,
             },
           },
           {
-            $match: { _id: { $in: reviewIds }, year: new Date().getFullYear(), month: new Date().getMonth() + 1 },
+            $match: {
+              employee: Types.ObjectId(employeeId),
+              year: new Date().getFullYear(),
+              month: new Date().getMonth() + 1,
+            },
           },
 
           {
@@ -418,6 +419,24 @@ class EmployeesController {
       if (mentAllTimeEyerate !== 0) {
         rev.reviewSiteMentions.push({ numOfReviews: mentAllTimeEyerate, platform: 'Eyerate' });
       }
+
+      // make order of platforms weedmaps => google => eyerate
+      const reviewSiteMentionsReodered = [];
+
+      rev.reviewSiteMentions.forEach((el: any) => {
+        switch (el.platform) {
+          case 'Weedmaps':
+            reviewSiteMentionsReodered[0] = el.numOfReviews;
+            break;
+          case 'Google':
+            reviewSiteMentionsReodered[1] = el.numOfReviews;
+            break;
+          case 'Eyerate':
+            reviewSiteMentionsReodered[2] = el.numOfReviews;
+            break;
+        }
+      });
+
       return {
         reviewStats: {
           mentionsThisMonth: mentMonth,
