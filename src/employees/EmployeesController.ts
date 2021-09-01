@@ -542,31 +542,6 @@ class EmployeesController {
     }
   }
 
-  async getBalance(req: Request, res: Response, next: NextFunction) {
-    const plaidAccount = await this.plaidAccountModel.findOne({ employee_id: Types.ObjectId(req.params.id) });
-    if (!plaidAccount) throw new ErrorHandler(404, 'This employee does not have plaid account');
-    const { accounts } = await plaidClient.getBalance(plaidAccount.access_token);
-  }
-
-  async getTransactions(req: Request, res: Response, next: NextFunction) {
-    try {
-      const plaidAccount = await this.plaidAccountModel.findOne({ employee_id: Types.ObjectId(req.params.id) });
-      if (!plaidAccount) res.send([]);
-      else {
-        const decryptedBytes = crypto.AES.decrypt(plaidAccount.access_token, 'My Secret Passphrase');
-        const plaintext = decryptedBytes.toString(crypto.enc.Utf8);
-        const { transactions } = await plaidClient.getTransactions(
-          plaintext,
-          req.query.startDate as string,
-          req.query.endDate as string,
-        );
-        res.send({ transactions });
-      }
-    } catch (error) {
-      next(error);
-    }
-  }
-
   async getRevenue(req: Request, res: Response, next: NextFunction) {
     const queryObj = req.queryObj || {};
     const eventDate = queryObj.$and.map((arr: any) => arr.date);
