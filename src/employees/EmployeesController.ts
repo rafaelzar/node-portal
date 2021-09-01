@@ -276,6 +276,7 @@ class EmployeesController {
       next(error);
     }
   }
+
   private async reviewStatsAndMentions(employeeId: string, next: NextFunction) {
     try {
       const mentions = await this.mentionModel.find({ employee: Types.ObjectId(employeeId) });
@@ -432,6 +433,7 @@ class EmployeesController {
       next(error);
     }
   }
+
   async userStats(req: Request, res: Response, next: NextFunction) {
     try {
       const employeeId = req.params.id;
@@ -504,6 +506,7 @@ class EmployeesController {
       next(error);
     }
   }
+
   async createLinkToken(req: Request, res: Response, next: NextFunction) {
     try {
       const { link_token } = await plaidClient.createLinkToken({
@@ -562,6 +565,17 @@ class EmployeesController {
     } catch (error) {
       next(error);
     }
+  }
+
+  async getRevenue(req: Request, res: Response, next: NextFunction) {
+    const queryObj = req.queryObj || {};
+    const eventDate = queryObj.$and.map((arr: any) => arr.date);
+    queryObj.$and = queryObj.$and.filter((obj: any) => !obj.hasOwnProperty('date'));
+    queryObj.$and.push({ employee: Types.ObjectId(req.params.id) });
+    queryObj.$and.push({ 'events.status': 'PAID' });
+    queryObj.$and.push({ 'events.date': eventDate[0] });
+    const revenue = await this.paymentModel.find(queryObj);
+    res.send(revenue);
   }
 
   // helper methods
