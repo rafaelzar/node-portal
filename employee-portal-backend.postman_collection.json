@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "7b7d292d-7458-4f69-942a-e2c65a3515c0",
+		"_postman_id": "452936a0-2494-48e4-8e6c-e9a885c34b44",
 		"name": "employee-portal-backend",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -537,6 +537,31 @@
 					"body": ""
 				}
 			]
+		},
+		{
+			"name": "get bank accounts",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{eyerate_host}}/employees/bank-accounts/:id",
+					"host": [
+						"{{eyerate_host}}"
+					],
+					"path": [
+						"employees",
+						"bank-accounts",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": null
+						}
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"event": [
