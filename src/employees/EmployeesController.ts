@@ -494,8 +494,8 @@ class EmployeesController {
         .slice(0, 3);
       const lRank = leaderboard[0]?.rank !== -1 ? leaderboard[0]?.rank : 0;
       const earningsStats = {
-        earningsAvailable: earnings?.earningsAvailable || 0,
-        lastPayment: earnings?.lastPayment || 0,
+        earningsAvailable: earnings?.earningsAvailable,
+        lastPayment: earnings?.lastPayment,
         allTimeEarnings: allTime[0]?.allTimeEarnings || 0,
         thisMonthEarnings: thisMonth[0]?.thisMonthEarnings || 0,
         leaderboardRank: lRank,
@@ -579,20 +579,34 @@ class EmployeesController {
               $addFields: { lastPayment: { $last: '$events' } },
             },
             { $sort: { 'lastPayment.date': -1 } },
-            { $project: { _id: 0, amount: '$amount' } },
+            { $project: { _id: 0, amount: '$amount', lPaymentD: '$lastPayment.date' } },
           ],
         })
         .project({
           earningsAvailable: { $ifNull: [{ $arrayElemAt: ['$earningsAvailable.available', 0] }, 0] },
           lastPayment: { $ifNull: [{ $arrayElemAt: ['$lastPayment.amount', 0] }, 0] },
+          lastPaymentDate: { $ifNull: [{ $arrayElemAt: ['$lastPayment.lPaymentD', 0] }, null] },
         });
-      const { earningsAvailable, lastPayment } = earnings[0];
-      return { earningsAvailable, lastPayment };
+      const { earningsAvailable, lastPayment, lastPaymentDate } = earnings[0];
+      return { earningsAvailable, lastPayment, lastPaymentDate };
     } catch (error) {
       next(error);
     }
   }
+  async getBalanceAndLastPayment(req: Request, res: Response, next: NextFunction) {
+    try {
+      const employeeId = req.params.id;
+      const balanceAndLastPayment = await this.getEarningStats(employeeId, next);
 
+      res.send({
+        earningsAvailable: balanceAndLastPayment?.earningsAvailable,
+        lastPayment: balanceAndLastPayment?.lastPayment,
+        lastPaymentDate: balanceAndLastPayment?.lastPaymentDate,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
   // helper methods
 
   averageStats(documentArray: any[]) {

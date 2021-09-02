@@ -35,6 +35,7 @@ class EmployeesRouter {
       this._controller.exchangeToken,
     );
     this._router.get('/revenue/:id', validateJWT, validateDate, validateMongoId, this._controller.getRevenue);
+    this._router.get('/earnings/:id', this._controller.getBalanceAndLastPayment);
   }
 }
 
