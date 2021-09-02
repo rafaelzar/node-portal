@@ -34,8 +34,7 @@ class EmployeesRouter {
       validateJWT,
       this._controller.exchangeToken,
     );
-    this._router.get('/bank-accounts', validateMongoId, validateJWT, this._controller.getBankAccounts);
-    this._router.get('/', this._controller.exchangeToken);
+    this._router.get('/bank-accounts/:id', validateMongoId, validateJWT, this._controller.getBankAccounts);
     this._router.get('/revenue/:id', validateJWT, validateDate, validateMongoId, this._controller.getRevenue);
     this._router.get('/earnings/:id', this._controller.getBalanceAndLastPayment);
   }
