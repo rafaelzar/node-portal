@@ -543,8 +543,23 @@ class EmployeesController {
       await this.employeeModel.findByIdAndUpdate(Types.ObjectId(req.params.id), {
         plaid_account: plaidAccount._id,
       });
-      const identityResponse = await plaidClient.getIdentity(access_token);
-      res.send({ identityResponse });
+      const authResponse = await plaidClient.getAuth(access_token);
+      res.send({ authResponse });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getBankAccounts(req: Request, res: Response, next: NextFunction) {
+    try {
+      const plaidAccount = await this.plaidAccountModel.findOne({
+        employee: Types.ObjectId(req.params.id),
+      });
+      if (!plaidAccount) throw new ErrorHandler(404, 'User does not have plaid account');
+      const decryptedBytes = crypto.AES.decrypt(plaidAccount.access_token, 'My Secret Passphrase');
+      const plaintext = decryptedBytes.toString(crypto.enc.Utf8);
+      const authResponse = await plaidClient.getAuth(plaintext);
+      res.send({ authResponse });
     } catch (error) {
       next(error);
     }
@@ -677,3 +692,118 @@ export = new EmployeesController(
   PaymentModel,
   PlaidAccountModel,
 );
+
+// {
+//   "accounts": [
+//     {
+//       "account_id": "wp5rJy31NMfyEJNDvoqXhbwLlRaEGyCrwWWdy",
+//       "balances": {
+//         "available": 100,
+//         "current": 110,
+//         "iso_currency_code": "USD",
+//         "limit": null,
+//         "unofficial_currency_code": null
+//       },
+//       "mask": "0000",
+//       "name": "Plaid Checking",
+//       "official_name": "Plaid Gold Standard 0% Interest Checking",
+//       "subtype": "checking",
+//       "type": "depository"
+//     },
+//     {
+//       "account_id": "l418dp7olxiDAaok8E1pi5Q7n9NGkzfZQbbAp",
+//       "balances": {
+//         "available": 200,
+//         "current": 210,
+//         "iso_currency_code": "USD",
+//         "limit": null,
+//         "unofficial_currency_code": null
+//       },
+//       "mask": "1111",
+//       "name": "Plaid Saving",
+//       "official_name": "Plaid Silver Standard 0.1% Interest Saving",
+//       "subtype": "savings",
+//       "type": "depository"
+//     },
+//     {
+//       "account_id": "5NVq637arPcAbDxWd7GZUd3g5pjXPWFZlNNLz",
+//       "balances": {
+//         "available": null,
+//         "current": 1000,
+//         "iso_currency_code": "USD",
+//         "limit": null,
+//         "unofficial_currency_code": null
+//       },
+//       "mask": "2222",
+//       "name": "Plaid CD",
+//       "official_name": "Plaid Bronze Standard 0.2% Interest CD",
+//       "subtype": "cd",
+//       "type": "depository"
+//     },
+//     {
+//       "account_id": "kamgkLwoG3iMQPzlvEaZSGnMVR36rLiWnZZRW",
+//       "balances": {
+//         "available": null,
+//         "current": 410,
+//         "iso_currency_code": "USD",
+//         "limit": 2000,
+//         "unofficial_currency_code": null
+//       },
+//       "mask": "3333",
+//       "name": "Plaid Credit Card",
+//       "official_name": "Plaid Diamond 12.5% APR Interest Credit Card",
+//       "subtype": "credit card",
+//       "type": "credit"
+//     },
+//     {
+//       "account_id": "Jzbo9AkW8vcleKXgyPJ4cjva1KQw7qid3RRNb",
+//       "balances": {
+//         "available": 43200,
+//         "current": 43200,
+//         "iso_currency_code": "USD",
+//         "limit": null,
+//         "unofficial_currency_code": null
+//       },
+//       "mask": "4444",
+//       "name": "Plaid Money Market",
+//       "official_name": "Plaid Platinum Standard 1.85% Interest Money Market",
+//       "subtype": "money market",
+//       "type": "depository"
+//     }
+//   ],
+//   "item": {
+//     "available_products": [
+//       "assets",
+//       "balance",
+//       "credit_details"
+//     ],
+//     "billed_products": [
+//       "auth",
+//       "identity",
+//       "income",
+//       "transactions"
+//     ],
+//     "error": null,
+//     "institution_id": "ins_3",
+//     "item_id": "QNWnmvzAKwcx9RwPXqVMSoRBjkroVnhpge7bq",
+//     "webhook": "https://www.genericwebhookurl.com/webhook"
+//   },
+//   "numbers": {
+//     "ach": [
+//       {
+//         "account": "1111222233330000",
+//         "account_id": "wp5rJy31NMfyEJNDvoqXhbwLlRaEGyCrwWWdy",
+//         "routing": "011401533",
+//         "wire_routing": "021000021"
+//       },
+//       {
+//         "account": "1111222233331111",
+//         "account_id": "l418dp7olxiDAaok8E1pi5Q7n9NGkzfZQbbAp",
+//         "routing": "011401533",
+//         "wire_routing": "021000021"
+//       }
+//     ],
+//     "eft": []
+//   },
+//   "request_id": "snosJ"
+// }
