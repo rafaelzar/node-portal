@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { Employee, Review, Mention, Conversation, Customer, Payment } from 'eyerate';
+import { Employee, Review, Mention, Conversation, Payment } from 'eyerate';
 import EmployeeModel from './models/EmployeesModel';
 import { Model, Types } from 'mongoose';
 import ErrorHandler from '../errors/ErrorHandler';
@@ -276,11 +276,8 @@ class EmployeesController {
       next(error);
     }
   }
-
   private async reviewStatsAndMentions(employeeId: string, next: NextFunction) {
     try {
-      const mentions = await this.mentionModel.find({ employee: Types.ObjectId(employeeId) });
-
       const reviews = this.mentionModel.aggregate().facet({
         reviewSiteMentions: [
           { $match: { employee: Types.ObjectId(employeeId), review: { $exists: true } } },
@@ -390,7 +387,8 @@ class EmployeesController {
       let sumRating = 0;
       let mentAllTimeEyerate = 0;
       let numOfReviews = 0;
-
+      // merging data from reviews collection and conversations collection
+      // to get overall data
       if (conv.convThisMonth[0]?.mentions) {
         mentMonth += conv.convThisMonth[0].mentions;
       }
@@ -416,6 +414,7 @@ class EmployeesController {
       if (rev.reviewStatsAllTime[0]?.mentions) {
         numOfReviews += rev.reviewStatsAllTime[0].mentions;
       }
+
       const avgAllTime = sumRating / numOfReviews;
       if (mentAllTimeEyerate !== 0) {
         rev.reviewSiteMentions.push({ numOfReviews: mentAllTimeEyerate, platform: 'Eyerate' });
@@ -487,12 +486,17 @@ class EmployeesController {
 
       const nonEyerateRes = nonEyerate?.results as any[];
       const eyerateRes = eyerate?.results as any[];
+
+      //merge eyerate and noneyerate reviews and sort them desceding
+
       const sortedMentions = [...nonEyerateRes, ...eyerateRes]
         .sort((a, b) => {
           return b.created_at - a.created_at;
         })
         .slice(0, 3);
+
       const lRank = leaderboard[0]?.rank !== -1 ? leaderboard[0]?.rank : 0;
+
       const earningsStats = {
         earningsAvailable: earnings?.earningsAvailable,
         lastPayment: earnings?.lastPayment,
