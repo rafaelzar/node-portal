@@ -4,7 +4,9 @@ import EmployeeModel from '../employees/models/EmployeesModel';
 import sgMail from './send-grid.config';
 import { ChangeEvent } from 'mongodb';
 import ENV from '../env-config';
-
+import LocationModel from '../employees/models/LocationModel';
+import cityTimezones from 'city-timezones';
+import moment from 'moment-timezone';
 export const eyerateTrigger = () => {
   ConversationModel.watch().on('change', async (doc: ChangeEvent<any>) => {
     if (doc.operationType === 'insert') {
@@ -12,12 +14,25 @@ export const eyerateTrigger = () => {
         const conversation: Conversation = doc.fullDocument;
         if (!conversation.employee) return;
         const employee = await EmployeeModel.findOne({ _id: conversation.employee });
+        const location = await LocationModel.findOne({ _id: conversation.location });
+        const city = location?.toObject().address.city;
         if (!employee || !employee.email || !conversation.rating) return;
         const employeeObj = employee.toObject();
+        let date: string;
+        if (city) {
+          const timezone = cityTimezones.lookupViaCity(city)[0]?.timezone || 'America/Los_Angeles';
+
+          const mom = moment.tz(new Date(String(conversation.created_at)), timezone);
+          date = mom.format('LLL');
+        } else {
+          const mom = moment.tz(new Date(String(conversation.created_at)), 'America/Los_Angeles');
+          date = mom.format('LLL');
+        }
+
         const templateData = {
           review_text: 'dummy review text',
           review_rating: conversation.rating,
-          review_date: conversation.created_at,
+          review_date: date,
           employee_link: ENV.FE_LINK,
         };
         const msg: any = {
