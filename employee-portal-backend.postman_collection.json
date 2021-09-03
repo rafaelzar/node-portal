@@ -1,6 +1,6 @@
 {
 	"info": {
-		"_postman_id": "452936a0-2494-48e4-8e6c-e9a885c34b44",
+		"_postman_id": "6851a88d-2a59-4567-a808-83f9ce916846",
 		"name": "employee-portal-backend",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
@@ -557,6 +557,31 @@
 						{
 							"key": "id",
 							"value": null
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get user earnings",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{eyerate_host}}/employees/earnings/:id",
+					"host": [
+						"{{eyerate_host}}"
+					],
+					"path": [
+						"employees",
+						"earnings",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "60ad43e35e08070013432c0b"
 						}
 					]
 				}
