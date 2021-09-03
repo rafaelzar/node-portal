@@ -30,7 +30,7 @@ class EmployeesController {
       if (!employee.cognito_id) {
         const updatedEmployee = await this.employeeModel.findOneAndUpdate(
           { email: req.user.email },
-          { $set: { cognito_id: req.user.aud } },
+          { $set: { cognito_id: req.user.sub } },
           { new: true },
         );
         res.send(updatedEmployee);
