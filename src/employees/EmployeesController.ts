@@ -542,16 +542,18 @@ class EmployeesController {
 
   async exchangeToken(req: Request, res: Response, next: NextFunction) {
     try {
-      const { access_token } = await plaidClient.exchangePublicToken(req.body.public_token);
-      const encryptedAES = crypto.AES.encrypt(access_token, 'My Secret Passphrase');
-      const plaidAccount = await this.plaidAccountModel.create({
-        employee: Types.ObjectId(req.params.id),
-        access_token: encryptedAES,
-      });
-      await this.employeeModel.findByIdAndUpdate(Types.ObjectId(req.params.id), {
-        plaid_account: plaidAccount._id,
-      });
-      const authResponse = await plaidClient.getAuth(access_token);
+      // const { access_token } = await plaidClient.exchangePublicToken(req.body.public_token);
+      // const encryptedAES = crypto.AES.encrypt(access_token, 'My Secret Passphrase');
+      // const plaidAccount = await this.plaidAccountModel.create({
+      //   employee: Types.ObjectId(req.params.id),
+      //   access_token: encryptedAES,
+      // });
+      // await this.employeeModel.findByIdAndUpdate(Types.ObjectId(req.params.id), {
+      //   plaid_account: plaidAccount._id,
+      // });
+      const authResponse: any = await plaidClient.getAuth('access-sandbox-b93967a7-8d88-487c-ab3e-20292a297436');
+      const bankReponse = await plaidClient.getInstitutionById(authResponse.item.institution_id, ['US']);
+      authResponse.bank = bankReponse.institution.name;
       res.send({ authResponse });
     } catch (error) {
       next(error);
@@ -566,7 +568,9 @@ class EmployeesController {
       if (!plaidAccount) throw new ErrorHandler(404, 'User does not have plaid account');
       const decryptedBytes = crypto.AES.decrypt(plaidAccount.access_token, 'My Secret Passphrase');
       const plaintext = decryptedBytes.toString(crypto.enc.Utf8);
-      const authResponse = await plaidClient.getAuth(plaintext);
+      const authResponse: any = await plaidClient.getAuth(plaintext);
+      const bankReponse = await plaidClient.getInstitutionById(authResponse.item.institution_id, ['US']);
+      authResponse.bank = bankReponse.institution.name;
       res.send({ authResponse });
     } catch (error) {
       next(error);
