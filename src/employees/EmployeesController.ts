@@ -22,12 +22,20 @@ class EmployeesController {
     private plaidAccountModel: Model<PlaidAccount>,
   ) {}
 
-  async validateJwt(req: Request, res: Response, next: NextFunction) {
+  async getEmployee(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.user) throw new ErrorHandler(404, 'Cognito user not found');
-      const user = await this.employeeModel.findOne({ email: req.user.email });
-      if (!user) throw new ErrorHandler(404, 'Employee not found');
-      res.send(user);
+      const employee = await this.employeeModel.findOne({ email: req.user.email });
+      if (!employee) throw new ErrorHandler(404, 'Employee not found');
+      if (!employee.cognito_id) {
+        const updatedEmployee = await this.employeeModel.findOneAndUpdate(
+          { email: req.user.email },
+          { $set: { cognito_id: req.user.aud } },
+          { new: true },
+        );
+        res.send(updatedEmployee);
+      }
+      res.send(employee);
     } catch (error) {
       next(error);
     }
@@ -566,14 +574,18 @@ class EmployeesController {
   }
 
   async getRevenue(req: Request, res: Response, next: NextFunction) {
-    const queryObj = req.queryObj || {};
-    const eventDate = queryObj.$and.map((arr: any) => arr.date);
-    queryObj.$and = queryObj.$and.filter((obj: any) => !obj.hasOwnProperty('date'));
-    queryObj.$and.push({ employee: Types.ObjectId(req.params.id) });
-    queryObj.$and.push({ 'events.status': 'PAID' });
-    queryObj.$and.push({ 'events.date': eventDate[0] });
-    const revenue = await this.paymentModel.find(queryObj);
-    res.send(revenue);
+    try {
+      const queryObj = req.queryObj || {};
+      const eventDate = queryObj.$and.map((arr: any) => arr.date);
+      queryObj.$and = queryObj.$and.filter((obj: any) => !obj.hasOwnProperty('date'));
+      queryObj.$and.push({ employee: Types.ObjectId(req.params.id) });
+      queryObj.$and.push({ 'events.status': 'PAID' });
+      queryObj.$and.push({ 'events.date': eventDate[0] });
+      const revenue = await this.paymentModel.find(queryObj);
+      res.send(revenue);
+    } catch (error) {
+      next(error);
+    }
   }
 
   private async getEarningStats(employeeId: string, next: NextFunction) {

@@ -29,6 +29,9 @@ export const EmployeeSchema: Schema = new Schema(
     active: {
       type: Boolean,
     },
+    cognito_id: {
+      type: String,
+    },
     plaid_account: {
       type: ObjectId,
     },
