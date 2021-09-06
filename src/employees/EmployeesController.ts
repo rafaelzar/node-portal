@@ -284,6 +284,7 @@ class EmployeesController {
       next(error);
     }
   }
+
   private async reviewStatsAndMentions(employeeId: string, next: NextFunction) {
     try {
       const reviews = this.mentionModel.aggregate().facet({
@@ -628,6 +629,7 @@ class EmployeesController {
       next(error);
     }
   }
+
   async getBalanceAndLastPayment(req: Request, res: Response, next: NextFunction) {
     try {
       const employeeId = req.params.id;
@@ -642,6 +644,24 @@ class EmployeesController {
       next(error);
     }
   }
+
+  async removePlaidAccount(req: Request, res: Response, next: NextFunction) {
+    try {
+      const plaidAccount = await this.plaidAccountModel.findOneAndDelete({ _id: Types.ObjectId(req.params.id) });
+      if (!plaidAccount) throw new ErrorHandler(404, 'User does not have plaid account');
+      const employee = await this.employeeModel.findOneAndUpdate(
+        { _id: Types.ObjectId(req.params.id) },
+        { $set: { plaid_account: undefined } },
+        { new: true },
+      );
+      if (!employee) throw new ErrorHandler(400, 'Employee not updated');
+      await plaidClient.removeItem(plaidAccount.access_token);
+      res.send({ employee });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // helper methods
 
   averageStats(documentArray: any[]) {
