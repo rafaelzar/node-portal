@@ -30,7 +30,7 @@ export const eyerateTrigger = () => {
         }
 
         const templateData = {
-          review_text: 'dummy review text',
+          review_text: undefined,
           review_rating: conversation.rating,
           review_date: date,
           employee_link: ENV.FE_LINK,
