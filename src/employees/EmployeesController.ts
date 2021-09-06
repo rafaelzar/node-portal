@@ -647,7 +647,7 @@ class EmployeesController {
 
   async removePlaidAccount(req: Request, res: Response, next: NextFunction) {
     try {
-      const plaidAccount = await this.plaidAccountModel.findOneAndDelete({ _id: Types.ObjectId(req.params.id) });
+      const plaidAccount = await this.plaidAccountModel.findOneAndDelete({ employee: Types.ObjectId(req.params.id) });
       if (!plaidAccount) throw new ErrorHandler(404, 'User does not have plaid account');
       const employee = await this.employeeModel.findOneAndUpdate(
         { _id: Types.ObjectId(req.params.id) },
