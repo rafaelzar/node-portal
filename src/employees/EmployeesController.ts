@@ -655,7 +655,9 @@ class EmployeesController {
         { new: true },
       );
       if (!employee) throw new ErrorHandler(400, 'Employee not updated');
-      await plaidClient.removeItem(plaidAccount.access_token);
+      const decryptedBytes = crypto.AES.decrypt(plaidAccount.access_token, 'My Secret Passphrase');
+      const plaintext = decryptedBytes.toString(crypto.enc.Utf8);
+      await plaidClient.removeItem(plaintext);
       res.send({ employee });
     } catch (error) {
       next(error);
