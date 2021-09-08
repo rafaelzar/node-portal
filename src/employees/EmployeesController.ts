@@ -25,7 +25,7 @@ class EmployeesController {
   async getEmployee(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.user) throw new ErrorHandler(404, 'Cognito user not found');
-      const employee = await this.employeeModel.findOne({ email: req.user.email });
+      const employee: any = await this.employeeModel.findOne({ email: req.user.email });
       if (!employee) throw new ErrorHandler(404, 'Employee not found');
       if (!employee.cognito_id) {
         const updatedEmployee = await this.employeeModel.findOneAndUpdate(
@@ -581,13 +581,28 @@ class EmployeesController {
   async getRevenue(req: Request, res: Response, next: NextFunction) {
     try {
       const queryObj = req.queryObj || {};
+      queryObj.$and.push({ employee: Types.ObjectId(req.params.id) });
+      // populated the mention to get the review so front can potentialy display more details about it
+      const mentions = await this.mentionModel.find(queryObj).populate({ path: 'review', model: ReviewModel });
       const eventDate = queryObj.$and.map((arr: any) => arr.date);
       queryObj.$and = queryObj.$and.filter((obj: any) => !obj.hasOwnProperty('date'));
-      queryObj.$and.push({ employee: Types.ObjectId(req.params.id) });
+
       queryObj.$and.push({ 'events.status': 'PAID' });
       queryObj.$and.push({ 'events.date': eventDate[0] });
       const revenue = await this.paymentModel.find(queryObj);
-      res.send(revenue);
+
+      // sort asc since we want the order revenue to be from most recent to oldest
+      // it makes more sense than for it to be random
+      // or just make a query param and pass it to sort fn
+      const sortedArr = [...mentions, ...revenue].sort((a: any, b: any): any => {
+        const aObj = a.toObject();
+        const bObj = b.toObject();
+        const aDate = aObj?.events ? aObj.events.filter((el: any) => el.status === 'PAID')[0].date : aObj.date;
+        const bDate = bObj?.events ? bObj.events.filter((el: any) => el.status === 'PAID')[0].date : bObj.date;
+
+        return bDate - aDate;
+      });
+      res.send(sortedArr);
     } catch (error) {
       next(error);
     }
