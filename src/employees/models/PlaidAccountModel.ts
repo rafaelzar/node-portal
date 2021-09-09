@@ -1,9 +1,6 @@
 import { Schema, model } from 'mongoose';
 import { ObjectId } from 'mongodb';
-
-export interface PlaidAccount {
-  access_token: string;
-}
+import { PlaidAccount } from 'eyerate';
 export const PlaidAccountSchema: Schema = new Schema(
   {
     access_token: {
