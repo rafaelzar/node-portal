@@ -7,6 +7,7 @@ import autoBind from 'auto-bind';
 import { validateQueryParam } from '../middleware/validate-query-param';
 import { tokenExchangeDto } from '../middleware/dto/token-exchange.dto';
 import { validateDate } from '../middleware/validate-date';
+import { validateEmployee } from '../middleware/validate-employee';
 
 class EmployeesRouter {
   private _router = Router();
@@ -21,6 +22,7 @@ class EmployeesRouter {
     this._configure();
   }
 
+  // development routes
   private _configure() {
     this._router.get('/validate-jwt', validateJWT, this._controller.getEmployee);
     this._router.patch('/:id', validateMongoId, validateJWT, updateEmployeeDto, this._controller.updateEmployee);
@@ -39,6 +41,27 @@ class EmployeesRouter {
     this._router.get('/earnings/:id', validateMongoId, validateJWT, this._controller.getBalanceAndLastPayment);
     this._router.delete('/plaid-account/:id', validateMongoId, validateJWT, this._controller.removePlaidAccount);
   }
+
+  // production routes
+  // private _configure() {
+  //   this._router.get('/validate-jwt', validateJWT, this._controller.getEmployee);
+  //   this._router.patch('/:id', validateMongoId, validateJWT, validateEmployee, updateEmployeeDto, this._controller.updateEmployee);
+  //   this._router.get('/reviews/:id', validateMongoId, validateJWT, validateEmployee, validateQueryParam, this._controller.getReviews);
+  //   this._router.get('/stats/:id', validateMongoId, validateJWT,validateEmployee ,validateQueryParam, this._controller.userStats);
+  //   this._router.get('/create-link-token/:id', validateMongoId, validateJWT, validateEmployee,this._controller.createLinkToken);
+  //   this._router.post(
+  //     '/token-exchange/:id',
+  //     validateMongoId,
+  //     validateJWT,
+  //     validateEmployee,
+  //     tokenExchangeDto,
+  //     this._controller.exchangeToken,
+  //   );
+  //   this._router.get('/bank-accounts/:id', validateMongoId, validateJWT, validateEmployee, this._controller.getBankAccounts);
+  //   this._router.get('/revenue/:id', validateMongoId, validateJWT,validateEmployee ,validateDate, this._controller.getRevenue);
+  //   this._router.get('/earnings/:id', validateMongoId, validateJWT,validateEmployee ,this._controller.getBalanceAndLastPayment);
+  //   this._router.delete('/plaid-account/:id', validateMongoId, validateJWT, validateEmployee,this._controller.removePlaidAccount);
+  // }
 }
 
 export = new EmployeesRouter().router;
