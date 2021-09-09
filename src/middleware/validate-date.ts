@@ -1,5 +1,4 @@
 import { RequestHandler } from 'express';
-import { Types } from 'mongoose';
 import ErrorHandler from '../errors/ErrorHandler';
 
 export const validateDate: RequestHandler = async (req, res, next) => {

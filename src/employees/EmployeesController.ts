@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { Employee, Review, Mention, Conversation, Payment } from 'eyerate';
+import { Employee, Review, Mention, Conversation, Payment, PlaidAccount } from 'eyerate';
 import EmployeeModel from './models/EmployeesModel';
 import { Model, Types } from 'mongoose';
 import ErrorHandler from '../errors/ErrorHandler';
@@ -9,7 +9,7 @@ import ConversationModel from './models/ConversationModels';
 import CustomerModel from './models/CustomerModel';
 import PaymentModel from './models/PaymentModel';
 import plaidClient from '../plaid/plaid.config';
-import PlaidAccountModel, { PlaidAccount } from './models/PlaidAccountModel';
+import PlaidAccountModel from './models/PlaidAccountModel';
 import crypto from 'crypto-js';
 
 class EmployeesController {
@@ -45,14 +45,7 @@ class EmployeesController {
     try {
       const user = await this.employeeModel.findOneAndUpdate(
         { _id: Types.ObjectId(req.params.id) },
-        {
-          $set: {
-            first_name: req.body.first_name,
-            last_name: req.body.last_name,
-            phone: req.body.phone,
-            nick_names: req.body.nick_names,
-          },
-        },
+        { $set: req.body },
         { new: true },
       );
       if (!user) throw new ErrorHandler(404, 'Employee not updated');
