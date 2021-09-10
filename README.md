@@ -28,12 +28,6 @@ Cognito dev_eyerate user pool have custom setup
 
 Enter your cognito aws credentials to enviroment file
 
-COGNITO_APP_USER_POOL_ID=
-COGNITO_APP_CLIENT_ID=
-COGNITO_APP_USER_POOL_REGION=
-COGNITO_ISS=
-
-
 ## Plaid setup
 In dev environment create your plaid account and use plaid sandbox enviroment.
 When switching to production, create plaid production account and change plaid client options in config file located
