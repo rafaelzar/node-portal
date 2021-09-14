@@ -22,6 +22,7 @@ class EmployeesRouter {
   private _configure() {
     this._router.get('/validate-jwt', validateJWT, this._controller.validateJwt);
     this._router.patch('/:id', validateMongoId, updateEmployeeDto, validateJWT, this._controller.updateEmployee);
+    this._router.get('/reviews/:id', validateMongoId, validateQueryParam, this._controller.getReviews);
   }
 }
 
