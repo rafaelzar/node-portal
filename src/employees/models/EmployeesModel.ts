@@ -1,4 +1,5 @@
 import { Types, Schema, model } from 'mongoose';
+import { ObjectId } from 'mongodb';
 import { Employee } from 'eyerate';
 
 export const EmployeeSchema: Schema = new Schema(
@@ -27,6 +28,12 @@ export const EmployeeSchema: Schema = new Schema(
     },
     active: {
       type: Boolean,
+    },
+    cognito_id: {
+      type: String,
+    },
+    plaid_account: {
+      type: ObjectId,
     },
   },
   { collection: 'Employees', timestamps: true },

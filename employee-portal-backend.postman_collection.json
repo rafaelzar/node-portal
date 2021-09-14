@@ -1,12 +1,12 @@
 {
 	"info": {
-		"_postman_id": "4180941f-cf7e-40b9-bbaa-74f90d33e026",
+		"_postman_id": "452936a0-2494-48e4-8e6c-e9a885c34b44",
 		"name": "employee-portal-backend",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
 		{
-			"name": "get nonEyeRate reviews",
+			"name": "get reviews",
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -186,6 +186,77 @@
 			]
 		},
 		{
+			"name": "get stats",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{eyerate_host}}/employees/stats/:id?sort=desc",
+					"host": [
+						"{{eyerate_host}}"
+					],
+					"path": [
+						"employees",
+						"stats",
+						":id"
+					],
+					"query": [
+						{
+							"key": "sort",
+							"value": "desc"
+						},
+						{
+							"key": "startDate",
+							"value": "2016-01-05",
+							"disabled": true
+						},
+						{
+							"key": "endDate",
+							"value": "2021-08-23",
+							"disabled": true
+						},
+						{
+							"key": "startDate",
+							"value": "2016-01-05",
+							"disabled": true
+						},
+						{
+							"key": "endDate",
+							"value": "2021-08-23",
+							"disabled": true
+						},
+						{
+							"key": "lastDate",
+							"value": "2021-05-13T08:00:00.000Z",
+							"disabled": true
+						},
+						{
+							"key": "platform",
+							"value": "Weedmaps",
+							"disabled": true
+						},
+						{
+							"key": "cursor",
+							"value": "right",
+							"disabled": true
+						},
+						{
+							"key": "sort",
+							"value": "a",
+							"disabled": true
+						}
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "5fb82fe494b1960012e1a95a"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "get user",
 			"request": {
 				"auth": {
@@ -211,7 +282,29 @@
 					]
 				}
 			},
-			"response": []
+			"response": [
+				{
+					"name": "get user",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{eyerate_host}}/employees/validate-jwt",
+							"host": [
+								"{{eyerate_host}}"
+							],
+							"path": [
+								"employees",
+								"validate-jwt"
+							]
+						}
+					},
+					"_postman_previewlanguage": "Text",
+					"header": [],
+					"cookie": [],
+					"body": ""
+				}
+			]
 		},
 		{
 			"name": "get BE status",
@@ -228,7 +321,28 @@
 					]
 				}
 			},
-			"response": []
+			"response": [
+				{
+					"name": "get BE status",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{eyerate_host}}/public",
+							"host": [
+								"{{eyerate_host}}"
+							],
+							"path": [
+								"public"
+							]
+						}
+					},
+					"_postman_previewlanguage": "Text",
+					"header": [],
+					"cookie": [],
+					"body": "{\n    \"success\": true\n}"
+				}
+			]
 		},
 		{
 			"name": "update user",
@@ -257,6 +371,217 @@
 						{
 							"key": "id",
 							"value": "5f8747f8a37cd807fa099658"
+						}
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "update user",
+					"originalRequest": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"first_name\": \"John\",\n    \"last_name\": \"Sena\",\n    \"phone\": \"+3060101\",\n    \"nick_names\": [\"Minime\", \"SayHelloToMyLittleFriend\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{eyerate_host}}/employees/:id",
+							"host": [
+								"{{eyerate_host}}"
+							],
+							"path": [
+								"employees",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "5f8747f8a37cd807fa099658"
+								}
+							]
+						}
+					},
+					"_postman_previewlanguage": "Text",
+					"header": [],
+					"cookie": [],
+					"body": ""
+				}
+			]
+		},
+		{
+			"name": "get plaid link token",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{eyerate_host}}/employees/create-link-token/:id",
+					"host": [
+						"{{eyerate_host}}"
+					],
+					"path": [
+						"employees",
+						"create-link-token",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": "610ad8f087eb7f7f432a9759"
+						}
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "get plaid link token",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{eyerate_host}}/employees/create-link-token/:id",
+							"host": [
+								"{{eyerate_host}}"
+							],
+							"path": [
+								"employees",
+								"create-link-token",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "610ad8f087eb7f7f432a9759"
+								}
+							]
+						}
+					},
+					"_postman_previewlanguage": "Text",
+					"header": [],
+					"cookie": [],
+					"body": ""
+				}
+			]
+		},
+		{
+			"name": "get Plaid user",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "",
+						"value": "",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"public_token\": \"\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{eyerate_host}}/employees/token-exchange/:id",
+					"host": [
+						"{{eyerate_host}}"
+					],
+					"path": [
+						"employees",
+						"token-exchange",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": null
+						}
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "get Plaid user",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{eyerate_host}}/employees/create-link-token/:id",
+							"host": [
+								"{{eyerate_host}}"
+							],
+							"path": [
+								"employees",
+								"create-link-token",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "610ad8f087eb7f7f432a9759"
+								}
+							]
+						}
+					},
+					"_postman_previewlanguage": "Text",
+					"header": [],
+					"cookie": [],
+					"body": ""
+				}
+			]
+		},
+		{
+			"name": "get bank accounts",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{eyerate_host}}/employees/bank-accounts/:id",
+					"host": [
+						"{{eyerate_host}}"
+					],
+					"path": [
+						"employees",
+						"bank-accounts",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": null
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "delete plaid account",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{eyerate_host}}/employees/plaid-account/:id",
+					"host": [
+						"{{eyerate_host}}"
+					],
+					"path": [
+						"employees",
+						"plaid-account",
+						":id"
+					],
+					"variable": [
+						{
+							"key": "id",
+							"value": ""
 						}
 					]
 				}

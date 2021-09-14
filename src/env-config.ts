@@ -52,4 +52,8 @@ export default {
   COGNITO_APP_CLIENT_ID: process.env.COGNITO_APP_CLIENT_ID,
   COGNITO_APP_USER_POOL_REGION: process.env.COGNITO_APP_USER_POOL_REGION,
   COGNITO_ISS: process.env.COGNITO_ISS,
+
+  //plaid
+  PLAID_CLIENT_ID: String(process.env.PLAID_CLIENT_ID),
+  PLAID_SECRET: String(process.env.PLAID_SECRET),
 };

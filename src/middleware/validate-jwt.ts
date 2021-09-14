@@ -55,7 +55,6 @@ export const validateJWT: RequestHandler = async (req, _res, next) => {
     if (!cognito_user.sub) {
       throw new ErrorHandler(403, 'Unauthorized, Missing sub in verified user');
     }
-
     req.user = cognito_user;
     next();
   } catch (error) {
