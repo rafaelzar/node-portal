@@ -9,8 +9,10 @@ export const validateEmployee: RequestHandler = async (req, _res, next) => {
     const employee = await EmployeeModel.findOne({ _id: Types.ObjectId(req.params.id) });
     if (!employee) throw new ErrorHandler(404, 'Employee not found');
     if (employee.cognito_id !== user.sub) throw new ErrorHandler(400, 'Cant access this route');
+
     next();
   } catch (error) {
+    console.log(error);
     next(error);
   }
 };
