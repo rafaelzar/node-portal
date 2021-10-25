@@ -10,7 +10,8 @@
   "scripts": {
     "dev": "nodemon ./src/index.ts",
     "types": "yarn add ssh://git@github.com/eyerate/types",
-    "start": "tsc && node ./build/index.js",
+    "start": "tsc && node -r dotenv/config ./build/index.js",
+    "pm2:start": "pm2 start npm --name employees-backend -- start",
     "format": "prettier --write \"src/**/*.ts\" \"src/test/**/*.ts\"",
     "test": "jest --passWithNoTests",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix"
