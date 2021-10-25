@@ -34,6 +34,7 @@ class EmployeesController {
           { new: true },
         );
         res.send(updatedEmployee);
+        return;
       }
       res.send(employee);
     } catch (error) {
