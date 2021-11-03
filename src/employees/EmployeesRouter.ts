@@ -8,6 +8,7 @@ import { validateQueryParam } from '../middleware/validate-query-param';
 import { tokenExchangeDto } from '../middleware/dto/token-exchange.dto';
 import { validateDate } from '../middleware/validate-date';
 import { validateEmployee } from '../middleware/validate-employee';
+import { uploadPhoto } from '../middleware/uploads';
 
 class EmployeesRouter {
   private _router = Router();
@@ -92,6 +93,21 @@ class EmployeesRouter {
       validateJWT,
       validateEmployee,
       this._controller.removePlaidAccount,
+    );
+    this._router.post(
+      '/upload-photo/:id',
+      validateMongoId,
+      validateJWT,
+      validateEmployee,
+      uploadPhoto,
+      this._controller.uploadEmployeePhoto,
+    );
+    this._router.post(
+      '/delete-photo/:id',
+      validateMongoId,
+      validateJWT,
+      validateEmployee,
+      this._controller.deleteEmployeePhoto,
     );
   }
 

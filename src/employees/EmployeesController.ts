@@ -11,6 +11,12 @@ import PaymentModel from './models/PaymentModel';
 import plaidClient from '../plaid/plaid.config';
 import PlaidAccountModel from './models/PlaidAccountModel';
 import crypto from 'crypto-js';
+import { uploadFileToS3, deleteFileFromS3 } from '../utils/aws';
+
+import fs from 'fs';
+import { promisify } from 'util';
+
+const unlinkAsync = promisify(fs.unlink);
 
 class EmployeesController {
   constructor(
@@ -54,6 +60,46 @@ class EmployeesController {
     } catch (error) {
       next(error);
     }
+  }
+
+  async #updateEmployeePhoto(req: Request, res: Response, next: NextFunction, photo?: { path: string }) {
+    try {
+      const user = await this.employeeModel.findById(req.params.id);
+      if (!user) throw new ErrorHandler(404, 'Employee not found');
+
+      if (user.photo_url) {
+        const [, , , ...oldPhotoParts] = user.photo_url.split('/');
+        try {
+          await deleteFileFromS3(oldPhotoParts.join('/'));
+        } catch (err) {
+          if (err) console.log(err, (err as Error).stack);
+        }
+      }
+
+      let newPhotoUrl = null;
+      if (photo) {
+        const s3Upload = await uploadFileToS3(`photos/${req.params.id}`, photo.path);
+        await unlinkAsync(photo.path);
+        newPhotoUrl = s3Upload.Location;
+      }
+
+      const updatedUser = await this.employeeModel.findByIdAndUpdate(
+        req.params.id,
+        { photo_url: newPhotoUrl },
+        { new: true },
+      );
+      return res.send(updatedUser);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async uploadEmployeePhoto(req: Request, res: Response, next: NextFunction) {
+    return this.#updateEmployeePhoto(req, res, next, req.file);
+  }
+
+  async deleteEmployeePhoto(req: Request, res: Response, next: NextFunction) {
+    return this.#updateEmployeePhoto(req, res, next);
   }
 
   async getNonEyerateStats(req: Request, next: NextFunction) {
