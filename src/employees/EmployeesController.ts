@@ -78,14 +78,14 @@ class EmployeesController {
 
       let newPhotoUrl = null;
       if (photo) {
-        const s3Upload = await uploadFileToS3(`photos/${req.params.id}`, photo.path);
+        const s3Upload = await uploadFileToS3(`photos/${req.params.id}_${+new Date()}`, photo.path);
         await unlinkAsync(photo.path);
         newPhotoUrl = s3Upload.Location;
       }
 
-      const updatedUser = await this.employeeModel.findByIdAndUpdate(
-        req.params.id,
-        { photo_url: newPhotoUrl },
+      const updatedUser = await this.employeeModel.findOneAndUpdate(
+        { _id: Types.ObjectId(req.params.id) },
+        { $set: { photo_url: newPhotoUrl } },
         { new: true },
       );
       return res.send(updatedUser);

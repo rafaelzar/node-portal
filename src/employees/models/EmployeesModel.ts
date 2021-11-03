@@ -15,6 +15,9 @@ export const EmployeeSchema: Schema = new Schema(
     phone: {
       type: String,
     },
+    photo_url: {
+      type: String,
+    },
     first_name: {
       type: String,
       require: true,
