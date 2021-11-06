@@ -385,49 +385,48 @@ class EmployeesController {
         ],
       });
 
-      const conversations = this.conversationModel.aggregate().facet({
-        convThisMonth: [
-          {
-            $project: {
-              year: { $year: '$created_at' },
-              month: { $month: '$created_at' },
-              employee: 1,
-              rating: 1,
+      const conversations = await this.conversationModel
+        .aggregate()
+        .match({
+          employee: Types.ObjectId(employeeId),
+          rating: { $ne: null },
+        })
+        .facet({
+          convThisMonth: [
+            {
+              $match: {
+                year: new Date().getFullYear(),
+                month: new Date().getMonth() + 1,
+              },
             },
-          },
-          {
-            $match: {
-              employee: Types.ObjectId(employeeId),
-              year: new Date().getFullYear(),
-              month: new Date().getMonth() + 1,
-              rating: { $ne: null },
+            { $count: 'mentions' },
+            {
+              $project: {
+                year: { $year: '$created_at' },
+                month: { $month: '$created_at' },
+                employee: 1,
+                rating: 1,
+              },
             },
-          },
-          { $count: 'mentions' },
-        ],
-        convAllTime: [
-          {
-            $match: {
-              employee: Types.ObjectId(employeeId),
-              rating: { $ne: null },
+          ],
+          convAllTime: [
+            {
+              $group: {
+                _id: null,
+                mentions: { $sum: 1 },
+                sumRating: { $sum: '$rating' },
+              },
             },
-          },
-          {
-            $group: {
-              _id: null,
-              mentions: { $sum: 1 },
-              sumRating: { $sum: '$rating' },
+            {
+              $project: {
+                _id: 0,
+                mentions: 1,
+                sumRating: 1,
+              },
             },
-          },
-          {
-            $project: {
-              _id: 0,
-              mentions: 1,
-              sumRating: 1,
-            },
-          },
-        ],
-      });
+          ],
+        });
+
       const [c, v] = await Promise.all([conversations, reviews]);
       const conv = c[0];
       const rev = v[0];
