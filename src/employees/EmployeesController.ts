@@ -1,4 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
+import dayjs from 'dayjs';
 import { Employee, Review, Mention, Conversation, Payment, PlaidAccount } from 'eyerate';
 import EmployeeModel from './models/EmployeesModel';
 import { Model, Types } from 'mongoose';
@@ -315,8 +316,8 @@ class EmployeesController {
           isFirst = limiter?.isFirst;
         }
 
-        const eyerate = promiseResult[2] as [];
-        const noneyerate = promiseResult[3] as [];
+        const eyerate = (promiseResult[2] || []) as [];
+        const noneyerate = (promiseResult[3] || []) as [];
         const stats = this.averageStats([...eyerate, ...noneyerate]);
         res.send({ data, stats, isLast, isFirst });
       }
@@ -463,7 +464,7 @@ class EmployeesController {
         numOfReviews += rev.reviewStatsAllTime[0].mentions;
       }
 
-      const avgAllTime = sumRating / numOfReviews;
+      const avgAllTime = sumRating / numOfReviews || 0;
       if (mentAllTimeEyerate !== 0) {
         rev.reviewSiteMentions.push({ numOfReviews: mentAllTimeEyerate, platform: 'Eyerate' });
       }
@@ -505,14 +506,37 @@ class EmployeesController {
         .group({ _id: { employeeId: '$employee' }, allTimeEarnings: { $sum: '$amount' } })
         .project({ _id: 0 });
 
+      const thisMonth = dayjs();
       const thisMonthEarningsArr = this.paymentModel
         .aggregate()
         .match({
           employee: Types.ObjectId(employeeId),
-          'payment_period.year': new Date().getFullYear(),
-          'payment_period.month': new Date().getMonth() + 1,
+          'payment_period.year': thisMonth.year(),
+          'payment_period.month': thisMonth.month() + 1,
         })
         .group({ _id: { employeeId: '$employee' }, thisMonthEarnings: { $sum: '$amount' } })
+        .project({ _id: 0 });
+      const thisMonthEarningsUnpaidArr = this.paymentModel
+        .aggregate()
+        .match({
+          employee: Types.ObjectId(employeeId),
+          'payment_period.year': thisMonth.year(),
+          'payment_period.month': thisMonth.month() + 1,
+          check_id: null,
+        })
+        .group({ _id: { employeeId: '$employee' }, thisMonthEarningsUnpaid: { $sum: '$amount' } })
+        .project({ _id: 0 });
+
+      const prevMonth = thisMonth.add(-1, 'month');
+      const prevMonthEarningsUnpaidArr = this.paymentModel
+        .aggregate()
+        .match({
+          employee: Types.ObjectId(employeeId),
+          'payment_period.year': prevMonth.year(),
+          'payment_period.month': prevMonth.month() + 1,
+          check_id: null,
+        })
+        .group({ _id: { employeeId: '$employee' }, prevMonthEarningsUnpaid: { $sum: '$amount' } })
         .project({ _id: 0 });
 
       const reviewStatsAndMentionsProm = this.reviewStatsAndMentions(employeeId, next);
@@ -521,16 +545,27 @@ class EmployeesController {
 
       const earningsProm = this.getEarningStats(employeeId, next);
 
-      const [reviewStatsAndMentions, nonEyerate, eyerate, allTime, thisMonth, leaderboard, earnings] =
-        await Promise.all([
-          reviewStatsAndMentionsProm,
-          nonEyerateProm,
-          eyerateProm,
-          allTimeEarningsArr,
-          thisMonthEarningsArr,
-          leaderboardProm,
-          earningsProm,
-        ]);
+      const [
+        reviewStatsAndMentions,
+        nonEyerate,
+        eyerate,
+        allTime,
+        thisMonthEarnings,
+        thisMonthEarningsUnpaid,
+        prevMonthEarningsUnpaid,
+        leaderboard,
+        earnings,
+      ] = await Promise.all([
+        reviewStatsAndMentionsProm,
+        nonEyerateProm,
+        eyerateProm,
+        allTimeEarningsArr,
+        thisMonthEarningsArr,
+        thisMonthEarningsUnpaidArr,
+        prevMonthEarningsUnpaidArr,
+        leaderboardProm,
+        earningsProm,
+      ]);
 
       const nonEyerateRes = nonEyerate?.results as any[];
       const eyerateRes = eyerate?.results as any[];
@@ -549,7 +584,9 @@ class EmployeesController {
         earningsAvailable: earnings?.earningsAvailable,
         lastPayment: earnings?.lastPayment,
         allTimeEarnings: allTime[0]?.allTimeEarnings || 0,
-        thisMonthEarnings: thisMonth[0]?.thisMonthEarnings || 0,
+        thisMonthEarnings: thisMonthEarnings[0]?.thisMonthEarnings || 0,
+        thisMonthEarningsUnpaid: thisMonthEarningsUnpaid[0]?.thisMonthEarningsUnpaid || 0,
+        prevMonthEarningsUnpaid: prevMonthEarningsUnpaid[0]?.prevMonthEarningsUnpaid || 0,
         leaderboardRank: lRank,
       };
 
