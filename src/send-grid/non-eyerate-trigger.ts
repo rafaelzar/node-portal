@@ -20,9 +20,9 @@ export const nonEyerateTrigger = () => {
 
         const employee = await EmployeeModel.findOne({ _id: mention.employee });
         const review = await ReviewModel.findOne({ _id: mention.review });
-        if (!employee || !review) return;
-        const employeeObj = employee.toObject();
-        const reviewObj = review.toObject();
+        const employeeObj = employee?.toObject();
+        const reviewObj = review?.toObject();
+        if (!employeeObj?.email || !reviewObj) return;
         let date = '';
         if (city) {
           const timezone = cityTimezones.lookupViaCity(city)[0]?.timezone || 'America/Los_Angeles';

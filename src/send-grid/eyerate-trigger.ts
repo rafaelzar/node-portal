@@ -16,8 +16,8 @@ export const eyerateTrigger = () => {
         const employee = await EmployeeModel.findOne({ _id: conversation.employee });
         const location = await LocationModel.findOne({ _id: conversation.location });
         const city = location?.toObject().address.city;
-        if (!employee || !employee.email || !conversation.rating) return;
-        const employeeObj = employee.toObject();
+        const employeeObj = employee?.toObject();
+        if (!employeeObj?.email || !conversation.rating) return;
         let date: string;
         if (city) {
           const timezone = cityTimezones.lookupViaCity(city)[0]?.timezone || 'America/Los_Angeles';

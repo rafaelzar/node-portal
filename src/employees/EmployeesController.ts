@@ -34,7 +34,7 @@ class EmployeesController {
       if (!req.user) throw new ErrorHandler(404, 'Cognito user not found');
       const employee: any = await this.employeeModel.findOne({ email: req.user.email });
       if (!employee) throw new ErrorHandler(404, 'Employee not found');
-      if (!employee.cognito_id) {
+      if (!employee.get('cognito_id')) {
         const updatedEmployee = await this.employeeModel.findOneAndUpdate(
           { email: req.user.email },
           { $set: { cognito_id: req.user.sub } },
@@ -68,8 +68,9 @@ class EmployeesController {
       const user = await this.employeeModel.findById(req.params.id);
       if (!user) throw new ErrorHandler(404, 'Employee not found');
 
-      if (user.photo_url) {
-        const [, , , ...oldPhotoParts] = user.photo_url.split('/');
+      const photoUrl = user.get('photo_url');
+      if (photoUrl) {
+        const [, , , ...oldPhotoParts] = photoUrl.split('/');
         try {
           await deleteFileFromS3(oldPhotoParts.join('/'));
         } catch (err) {
