@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import dayjs from 'dayjs';
-import { Employee, Review, Mention, Conversation, Payment, PlaidAccount } from 'eyerate';
+import { Employee, Review, Mention, Conversation, Payment, PlaidAccount, LocationPermissions } from 'eyerate';
 import EmployeeModel from './models/EmployeesModel';
 import { Model, Types } from 'mongoose';
 import ErrorHandler from '../errors/ErrorHandler';
@@ -811,6 +811,78 @@ class EmployeesController {
     if (count > 5 && date) return { isLast: false, isFirst: false };
     if (count < 6 && !date) return { isLast: true, isFirst: true };
     if (count < 6 && date) return { isLast: false, isFirst: true };
+  }
+
+  async getLeaderboard(req: Request, res: Response, next: NextFunction) {
+    const [{ topMentions }] = await this.mentionModel.aggregate().facet({
+      topMentions: [
+        { $group: { _id: '$employee', mentions: { $sum: 1 } } },
+        {
+          $sort: {
+            mentions: -1,
+          },
+        },
+        {
+          $limit: 5,
+        },
+      ],
+    });
+
+    const employeesIds = topMentions.map((mention: { _id: string }) => Types.ObjectId(mention._id));
+
+    const employees = (
+      await this.employeeModel.find({
+        _id: { $in: employeesIds },
+      })
+    ).map((employee) => employee.toObject());
+
+    const employeesLocationsIds = employees
+      .flatMap(
+        (employee) =>
+          Object.values(employee.locations).find((location) => location.active === true && location.role === 'Employee')
+            ?._id,
+      )
+      .filter(Boolean);
+
+    const payments = (
+      await this.paymentModel.find({
+        employee: { $in: employeesIds },
+        'events.status': 'PAID',
+      })
+    ).map((payment) => payment.toObject());
+
+    const [{ avgSmsRating }] = await this.conversationModel
+      .aggregate()
+      .match({
+        location: { $in: employeesLocationsIds },
+        rating: { $ne: null },
+      })
+      .facet({
+        avgSmsRating: [{ $group: { _id: '$location', rating: { $avg: '$rating' } } }],
+      });
+
+    const leaderboard = topMentions.map(({ _id, mentions }: { _id: string; mentions: number }) => {
+      const employee = employees.find((employee) => employee._id.toString() === _id.toString())!;
+
+      return {
+        employee,
+        mentions,
+        earned: +payments
+          .filter((payment) => payment.employee.toString() === _id.toString())
+          .reduce((result, current) => result + current.amount, 0)
+          .toFixed(0),
+        rating: +avgSmsRating
+          .find(({ _id }: { _id: string; rating: number }) =>
+            Object.values(employee.locations).some(
+              (location) =>
+                location.active === true && location.role === 'Employee' && location._id.toString() === _id.toString(),
+            ),
+          )
+          ?.rating?.toFixed(2),
+      };
+    });
+
+    res.send(leaderboard);
   }
 }
 export = new EmployeesController(
