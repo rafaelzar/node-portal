@@ -2,6 +2,8 @@ import express, { Request, Response, NextFunction } from 'express';
 import MainRouter from './MainRouter';
 import ErrorHandler from './errors/ErrorHandler';
 import cors from 'cors';
+import { Employee, LocationPermissions } from 'eyerate';
+import ICognitoUser from './ICognitoUser';
 // import { validateJWT } from './middleware/validate-jwt';
 /**
  * Express server application class using singleton
@@ -10,7 +12,9 @@ import cors from 'cors';
 declare global {
   namespace Express {
     interface Request {
-      user?: Record<string, any>;
+      user?: ICognitoUser;
+      employee?: Employee;
+      location?: LocationPermissions[string];
       queryObj?: Record<string, any>;
     }
   }
