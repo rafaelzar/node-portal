@@ -486,20 +486,24 @@ class EmployeesController {
   async userStats(req: Request, res: Response, next: NextFunction) {
     try {
       const employeeId = req.params.id;
+      const location = req.location;
 
-      const leaderboardProm = this.paymentModel
+      const leaderboardProm = this.mentionModel
         .aggregate()
+        .match({
+          location: location?._id,
+        })
         .facet({
-          allTimeEarnings: [
-            { $group: { _id: { employeeId: '$employee' }, allTimeEarnings: { $sum: '$amount' } } },
+          allTimeMentions: [
+            { $group: { _id: '$employee', mentions: { $sum: 1 } } },
             {
               $sort: {
-                allTimeEarnings: -1,
+                mentions: -1,
               },
             },
           ],
         })
-        .project({ rank: { $indexOfArray: ['$allTimeEarnings._id.employeeId', Types.ObjectId(employeeId)] } });
+        .project({ rank: { $indexOfArray: ['$allTimeMentions._id', Types.ObjectId(employeeId)] } });
 
       const allTimeEarningsArr = this.paymentModel
         .aggregate()
@@ -579,7 +583,7 @@ class EmployeesController {
         })
         .slice(0, 3);
 
-      const lRank = leaderboard[0]?.rank !== -1 ? leaderboard[0]?.rank : 0;
+      const lRank = leaderboard[0]?.rank !== -1 ? leaderboard[0]?.rank + 1 : 0;
 
       const earningsStats = {
         earningsAvailable: earnings?.earningsAvailable,
@@ -815,19 +819,29 @@ class EmployeesController {
   }
 
   async getLeaderboard(req: Request, res: Response, next: NextFunction) {
-    const [{ topMentions }] = await this.mentionModel.aggregate().facet({
-      topMentions: [
-        { $group: { _id: '$employee', mentions: { $sum: 1 } } },
-        {
-          $sort: {
-            mentions: -1,
+    const isActiveLocation = (location: LocationPermissions[string]) =>
+      location.active === true && location.role === 'Employee';
+
+    const location = req.location;
+
+    const [{ topMentions }] = await this.mentionModel
+      .aggregate()
+      .match({
+        location: location?._id,
+      })
+      .facet({
+        topMentions: [
+          { $group: { _id: '$employee', mentions: { $sum: 1 } } },
+          {
+            $sort: {
+              mentions: -1,
+            },
           },
-        },
-        {
-          $limit: 5,
-        },
-      ],
-    });
+          {
+            $limit: 5,
+          },
+        ],
+      });
 
     const employeesIds = topMentions.map((mention: { _id: string }) => Types.ObjectId(mention._id));
 
@@ -838,11 +852,7 @@ class EmployeesController {
     ).map((employee) => employee.toObject());
 
     const employeesLocationsIds = employees
-      .flatMap(
-        (employee) =>
-          Object.values(employee.locations).find((location) => location.active === true && location.role === 'Employee')
-            ?._id,
-      )
+      .map((employee) => Object.values(employee.locations).find(isActiveLocation)?._id)
       .filter(Boolean);
 
     const payments = (
@@ -875,8 +885,7 @@ class EmployeesController {
         rating: +avgSmsRating
           .find(({ _id }: { _id: string; rating: number }) =>
             Object.values(employee.locations).some(
-              (location) =>
-                location.active === true && location.role === 'Employee' && location._id.toString() === _id.toString(),
+              (location) => location._id.toString() === _id.toString() && isActiveLocation(location),
             ),
           )
           ?.rating?.toFixed(2),

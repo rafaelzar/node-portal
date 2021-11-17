@@ -5,11 +5,16 @@ import ErrorHandler from '../errors/ErrorHandler';
 
 export const validateEmployee: RequestHandler = async (req, _res, next) => {
   try {
-    const user = req.user || {};
     const employee = await EmployeeModel.findOne({ _id: Types.ObjectId(req.params.id) });
     if (!employee) throw new ErrorHandler(404, 'Employee not found');
-    if (employee.get('cognito_id') !== user.sub) throw new ErrorHandler(400, 'Cant access this route');
+    if (employee.get('cognito_id') !== req.user?.sub) throw new ErrorHandler(400, 'Cant access this route');
 
+    const employeeObj = employee.toObject();
+
+    req.employee = employeeObj;
+    req.location = Object.values(employeeObj?.locations).find(
+      (location) => location.active === true && location.role === 'Employee',
+    );
     next();
   } catch (error) {
     console.log(error);
