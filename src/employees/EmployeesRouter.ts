@@ -109,6 +109,7 @@ class EmployeesRouter {
       validateEmployee,
       this._controller.deleteEmployeePhoto,
     );
+    this._router.get('/leaderboard', validateJWT, this._controller.getLeaderboard);
   }
 
   // Test routes
