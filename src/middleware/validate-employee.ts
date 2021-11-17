@@ -12,9 +12,11 @@ export const validateEmployee: RequestHandler = async (req, _res, next) => {
     const employeeObj = employee.toObject();
 
     req.employee = employeeObj;
-    req.location = Object.values(employeeObj?.locations).find(
-      (location) => location.active === true && location.role === 'Employee',
-    );
+    if (employeeObj?.locations) {
+      req.location = Object.values(employeeObj.locations).find(
+        (location) => location.active === true && location.role === 'Employee',
+      );
+    }
     next();
   } catch (error) {
     console.log(error);
