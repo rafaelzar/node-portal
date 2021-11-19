@@ -43,6 +43,14 @@ class EmployeesRouter {
       this._controller.getReviews,
     );
     this._router.get(
+      '/feedback/:id',
+      validateMongoId,
+      validateJWT,
+      validateEmployee,
+      validateQueryParam,
+      this._controller.getFeedback,
+    );
+    this._router.get(
       '/stats/:id',
       validateMongoId,
       validateJWT,

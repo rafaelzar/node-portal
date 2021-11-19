@@ -483,6 +483,44 @@ class EmployeesController {
     }
   }
 
+  async getFeedback(req: Request, res: Response, next: NextFunction) {
+    try {
+      const queryObj = {
+        $and: req.queryObj?.$and.filter((obj: any) => !obj.hasOwnProperty('date') || obj.hasOwnProperty('keyword')),
+      };
+      queryObj.$and.push({ location: req.location ? req.location._id : null }, { rating: { $ne: null } });
+      const sort = req.query.sort as string;
+
+      const result = await this.conversationModel
+        .find(queryObj)
+        .sort({
+          created_at: sort === 'asc' ? 1 : -1,
+        })
+        .populate({ path: 'customer', select: 'name phone', model: CustomerModel });
+
+      let data: any = [];
+      let isLast;
+      let isFirst;
+      if (!req.query.cursor || req.query.cursor === 'right') {
+        data = result.slice(0, 5);
+        const limiter = this.paginationLimiterRight(result.length, req.query.lastDate);
+        isLast = limiter?.isLast;
+        isFirst = limiter?.isFirst;
+      }
+      if (req.query.cursor === 'left') {
+        data = result.slice(-5);
+        const limiter = this.paginationLimiterLeft(result.length, req.query.firstDate);
+        isLast = limiter?.isLast;
+        isFirst = limiter?.isFirst;
+      }
+
+      const { chartData, ...stats } = this.averageStats(result);
+      res.send({ data, stats, isLast, isFirst });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async userStats(req: Request, res: Response, next: NextFunction) {
     try {
       const employeeId = req.params.id;
