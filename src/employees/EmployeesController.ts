@@ -491,30 +491,70 @@ class EmployeesController {
       queryObj.$and.push({ location: req.location ? req.location._id : null }, { rating: { $ne: null } });
       const sort = req.query.sort as string;
 
-      const result = await this.conversationModel
-        .find(queryObj)
-        .sort({
-          created_at: sort === 'asc' ? 1 : -1,
-        })
-        .populate({ path: 'customer', select: 'name phone', model: CustomerModel });
+      const [[{ feedback: result }], total] = await Promise.all([
+        this.conversationModel
+          .aggregate()
+          .match(queryObj)
+          .facet({
+            feedback: [
+              {
+                $project: {
+                  to: 1,
+                  rating: 1,
+                  created_at: 1,
+                  customer: 1,
+                  messages: {
+                    $filter: {
+                      input: '$messages',
+                      as: 'message',
+                      cond: {
+                        $and: [
+                          { $eq: ['$$message.to', null] },
+                          { $regexMatch: { input: '$$message.content', regex: /(?!^[\d\s]+$)^.+$/ } },
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+              {
+                $match: {
+                  messages: { $ne: [] },
+                },
+              },
+              {
+                $sort: {
+                  created_at: sort === 'asc' ? 1 : -1,
+                },
+              },
+              {
+                $limit: 5,
+              },
+              {
+                $lookup: { from: 'Customers', localField: 'customer', foreignField: '_id', as: 'customer' },
+              },
+            ],
+          }),
+        this.conversationModel.find(queryObj),
+      ]);
 
       let data: any = [];
       let isLast;
       let isFirst;
       if (!req.query.cursor || req.query.cursor === 'right') {
         data = result.slice(0, 5);
-        const limiter = this.paginationLimiterRight(result.length, req.query.lastDate);
+        const limiter = this.paginationLimiterRight(total.length, req.query.lastDate);
         isLast = limiter?.isLast;
         isFirst = limiter?.isFirst;
       }
       if (req.query.cursor === 'left') {
         data = result.slice(-5);
-        const limiter = this.paginationLimiterLeft(result.length, req.query.firstDate);
+        const limiter = this.paginationLimiterLeft(total.length, req.query.firstDate);
         isLast = limiter?.isLast;
         isFirst = limiter?.isFirst;
       }
 
-      const { chartData, ...stats } = this.averageStats(result);
+      const { chartData, ...stats } = this.averageStats(total);
       res.send({ data, stats, isLast, isFirst });
     } catch (error) {
       next(error);
