@@ -483,7 +483,7 @@ class EmployeesController {
     }
   }
 
-  async getFeedback(req: Request, res: Response, next: NextFunction) {
+  private async getUserFeedback(req: Request, next: NextFunction) {
     try {
       const queryObj = {
         $and: req.queryObj?.$and.filter((obj: any) => !obj.hasOwnProperty('date') || obj.hasOwnProperty('keyword')),
@@ -555,10 +555,14 @@ class EmployeesController {
       }
 
       const { chartData, ...stats } = this.averageStats(total);
-      res.send({ data, stats, isLast, isFirst });
+      return { data, stats, isLast, isFirst };
     } catch (error) {
       next(error);
     }
+  }
+
+  async getFeedback(req: Request, res: Response, next: NextFunction) {
+    res.send(await this.getUserFeedback(req, next));
   }
 
   async userStats(req: Request, res: Response, next: NextFunction) {
@@ -627,6 +631,7 @@ class EmployeesController {
       const eyerateProm = this.getEyerateReviews(req, next);
 
       const earningsProm = this.getEarningStats(employeeId, next);
+      const feedbackProm = this.getUserFeedback(req, next);
 
       const [
         reviewStatsAndMentions,
@@ -638,6 +643,7 @@ class EmployeesController {
         prevMonthEarningsUnpaid,
         leaderboard,
         earnings,
+        feedback,
       ] = await Promise.all([
         reviewStatsAndMentionsProm,
         nonEyerateProm,
@@ -648,6 +654,7 @@ class EmployeesController {
         prevMonthEarningsUnpaidArr,
         leaderboardProm,
         earningsProm,
+        feedbackProm,
       ]);
 
       const nonEyerateRes = nonEyerate?.results as any[];
@@ -676,6 +683,7 @@ class EmployeesController {
       res.send({
         ...reviewStatsAndMentions,
         reviewMentions: sortedMentions,
+        feedbackMentions: feedback?.data,
         earningsStats,
       });
     } catch (error) {
