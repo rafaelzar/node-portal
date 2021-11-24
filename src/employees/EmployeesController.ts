@@ -530,9 +530,6 @@ class EmployeesController {
               {
                 $limit: 5,
               },
-              {
-                $lookup: { from: 'Customers', localField: 'customer', foreignField: '_id', as: 'customer' },
-              },
             ],
           }),
         this.conversationModel.find(queryObj),
