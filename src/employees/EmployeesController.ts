@@ -243,8 +243,8 @@ class EmployeesController {
           return {
             _id: obj._id,
             rating: obj.rating,
-            name: obj.customer.name,
-            phone: obj.customer.phone,
+            name: obj.customer?.name,
+            phone: obj.customer?.phone,
             created_at: obj.created_at,
           };
         });
@@ -590,6 +590,12 @@ class EmployeesController {
         .group({ _id: { employeeId: '$employee' }, allTimeEarnings: { $sum: '$amount' } })
         .project({ _id: 0 });
 
+      const allTimePaymentsArr = this.paymentModel
+        .aggregate()
+        .match({ employee: Types.ObjectId(employeeId), check_id: { $ne: null } })
+        .group({ _id: { employeeId: '$employee' }, allTimePayments: { $sum: '$amount' } })
+        .project({ _id: 0 });
+
       const thisMonth = dayjs();
       const thisMonthEarningsArr = this.paymentModel
         .aggregate()
@@ -631,31 +637,22 @@ class EmployeesController {
       const feedbackProm = this.getUserFeedback(req, next);
 
       const [
-        reviewStatsAndMentions,
-        nonEyerate,
-        eyerate,
-        allTime,
-        thisMonthEarnings,
-        thisMonthEarningsUnpaid,
-        prevMonthEarningsUnpaid,
-        leaderboard,
-        earnings,
-        feedback,
+        [reviewStatsAndMentions, nonEyerate, eyerate, allTimeEarnings, allTimePayments],
+        [thisMonthEarnings, thisMonthEarningsUnpaid, prevMonthEarningsUnpaid, leaderboard, earnings, feedback],
       ] = await Promise.all([
-        reviewStatsAndMentionsProm,
-        nonEyerateProm,
-        eyerateProm,
-        allTimeEarningsArr,
-        thisMonthEarningsArr,
-        thisMonthEarningsUnpaidArr,
-        prevMonthEarningsUnpaidArr,
-        leaderboardProm,
-        earningsProm,
-        feedbackProm,
+        Promise.all([reviewStatsAndMentionsProm, nonEyerateProm, eyerateProm, allTimeEarningsArr, allTimePaymentsArr]),
+        Promise.all([
+          thisMonthEarningsArr,
+          thisMonthEarningsUnpaidArr,
+          prevMonthEarningsUnpaidArr,
+          leaderboardProm,
+          earningsProm,
+          feedbackProm,
+        ]),
       ]);
 
-      const nonEyerateRes = nonEyerate?.results as any[];
-      const eyerateRes = eyerate?.results as any[];
+      const nonEyerateRes = (nonEyerate?.results as any[]) || [];
+      const eyerateRes = (eyerate?.results as any[]) || [];
 
       //merge eyerate and noneyerate reviews and sort them desceding
 
@@ -670,7 +667,8 @@ class EmployeesController {
       const earningsStats = {
         earningsAvailable: earnings?.earningsAvailable,
         lastPayment: earnings?.lastPayment,
-        allTimeEarnings: allTime[0]?.allTimeEarnings || 0,
+        allTimeEarnings: allTimeEarnings[0]?.allTimeEarnings || 0,
+        allTimePayments: allTimePayments[0]?.allTimePayments || 0,
         thisMonthEarnings: thisMonthEarnings[0]?.thisMonthEarnings || 0,
         thisMonthEarningsUnpaid: thisMonthEarningsUnpaid[0]?.thisMonthEarningsUnpaid || 0,
         prevMonthEarningsUnpaid: prevMonthEarningsUnpaid[0]?.prevMonthEarningsUnpaid || 0,
