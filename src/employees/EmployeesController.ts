@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import dayjs from 'dayjs';
-import { Employee, Review, Mention, Conversation, Payment, PlaidAccount, LocationPermissions } from 'eyerate';
+import { Employee, Review, Mention, Conversation, Payment, PlaidAccount, Location, LocationPermissions } from 'eyerate';
 import EmployeeModel from './models/EmployeesModel';
 import { Model, Types } from 'mongoose';
 import ErrorHandler from '../errors/ErrorHandler';
@@ -11,6 +11,7 @@ import CustomerModel from './models/CustomerModel';
 import PaymentModel from './models/PaymentModel';
 import plaidClient from '../plaid/plaid.config';
 import PlaidAccountModel from './models/PlaidAccountModel';
+import LocationModel from './models/LocationModel';
 import crypto from 'crypto-js';
 import { uploadFileToS3, deleteFileFromS3 } from '../utils/aws';
 
@@ -27,6 +28,7 @@ class EmployeesController {
     private conversationModel: Model<Conversation>,
     private paymentModel: Model<Payment>,
     private plaidAccountModel: Model<PlaidAccount>,
+    private locationModel: Model<Location>,
   ) {}
 
   async getEmployee(req: Request, res: Response, next: NextFunction) {
@@ -257,6 +259,7 @@ class EmployeesController {
 
   async getReviews(req: Request, res: Response, next: NextFunction) {
     try {
+      const locationId = req.location?._id;
       if (req.query.platform) {
         if (req.query.platform !== 'Eyerate') {
           const promiseResult = await Promise.all([
@@ -299,6 +302,7 @@ class EmployeesController {
           }
         });
 
+        const location = await this.locationModel.findById(locationId);
         const countEyerate = promiseResult[0]?.countEyerate as number;
         const countNonEyerate = promiseResult[1]?.countNonEyerate as number;
         let data: any = [];
@@ -320,7 +324,7 @@ class EmployeesController {
         const eyerate = (promiseResult[2] || []) as [];
         const noneyerate = (promiseResult[3] || []) as [];
         const stats = this.averageStats([...eyerate, ...noneyerate]);
-        res.send({ data, stats, isLast, isFirst });
+        res.send({ data, stats, location, isLast, isFirst });
       }
     } catch (error) {
       next(error);
@@ -983,4 +987,5 @@ export = new EmployeesController(
   ConversationModel,
   PaymentModel,
   PlaidAccountModel,
+  LocationModel,
 );
