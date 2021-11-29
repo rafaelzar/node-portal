@@ -31,10 +31,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
+        uses: actions/checkout@v2
       - name: Deploy in EC2
         env:
-          PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY  }}
+          PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY_PROD  }}
           HOSTNAME: ${{ secrets.HOSTNAME  }}
           USER_NAME: ${{ secrets.USER_NAME  }}
 
@@ -56,13 +56,14 @@ jobs:
     needs: Deploy
     runs-on: ubuntu-latest
     steps:
-    - uses: sarisia/actions-status-discord@v1
     - name: Successful ✅
+      uses: sarisia/actions-status-discord@v1
       if: ${{ success() }}
       with:
         webhook: ${{ secrets.DISCORD_WEBHOOK }}
         title: "Deployed to Prod"
     - name: Failed 🚨
+      uses: sarisia/actions-status-discord@v1
       if: ${{ failure() }}
       with:
         webhook: ${{ secrets.DISCORD_WEBHOOK }}
