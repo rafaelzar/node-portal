@@ -1,0 +1,94 @@
+name: CI/CD deploy to prod
+
+on:
+  push:
+    branches: [ 'main' ]
+
+
+# on:
+#   workflow_run:
+#     workflows: ["deploy"]
+#     types: [completed]
+
+  # this should only trigger on deploy/push to gh-pages branch.
+  # if we execute on main (push or deploy), this might run before the gh-pages branch gets updated.
+
+jobs:
+  #First we will see the application build or not , then we will deploy in EC2
+  # build:
+  #   runs-on: ubuntu-latest
+
+  #   steps:
+  #     - uses: actions/checkout@v2
+
+  #     - name: Build the docker_compose
+  #       run: docker-compose up -d --build
+
+  #     - name: Buid the application
+  #       run: docker-compose exec -T counter_app npm run build
+
+  Deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Deploy in EC2
+        env:
+          PRIVATE_KEY: ${{ secrets.AWS_PRIVATE_KEY  }}
+          HOSTNAME: ${{ secrets.HOSTNAME  }}
+          USER_NAME: ${{ secrets.USER_NAME  }}
+
+        run: |
+          echo "$PRIVATE_KEY" > private_key && chmod 600 private_key
+          ssh -o StrictHostKeyChecking=no -i private_key ${USER_NAME}@${HOSTNAME} '
+            # Now we have got the access of EC2 and we will start the deploy.
+            cd employee-portal
+            git fetch
+            git pull
+            yarn
+            yarn types
+            yarn tsc
+            pm2 flush
+            pm2 reload employees-backend
+          '
+
+  postMessage:
+    needs: Deploy
+    runs-on: ubuntu-latest
+    steps:
+    - uses: sarisia/actions-status-discord@v1
+    - name: Successful ✅
+      if: ${{ success() }}
+      with:
+        webhook: ${{ secrets.DISCORD_WEBHOOK }}
+        title: "Deployed to Prod"
+    - name: Failed 🚨
+      if: ${{ failure() }}
+      with:
+        webhook: ${{ secrets.DISCORD_WEBHOOK }}
+        title: "FAILED Deploy to Prod"
+        color: 0xff91a4
+
+
+
+      # the below code will update the github action status
+      # need to add the secrets.GITHUB_TOKEN
+
+      # - name: Successful ✅
+      #   if: ${{ success() }}
+      #   run: |
+      #     curl --request POST           --url https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}           --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}'           --header 'content-type: application/json'           --data '{
+      #       "context": "tests",
+      #       "state": "success",
+      #       "description": "Tests passed",
+      #       "target_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      #     }'
+      # - name: Failed 🚨
+      #   if: ${{ failure() }}
+      #   run: |
+      #     curl --request POST           --url https://api.github.com/repos/${{ github.repository }}/statuses/${{ github.sha }}           --header 'authorization: Bearer ${{ secrets.GITHUB_TOKEN }}'           --header 'content-type: application/json'           --data '{
+      #       "context": "tests",
+      #       "state": "failure",
+      #       "description": "Tests failed",
+      #       "target_url": "https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+      #     }'
