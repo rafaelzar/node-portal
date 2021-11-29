@@ -503,10 +503,10 @@ class EmployeesController {
       const queryObj = {
         $and: req.queryObj?.$and.filter((obj: any) => !obj.hasOwnProperty('date') || obj.hasOwnProperty('keyword')),
       };
-      queryObj.$and.push({ location: req.location ? req.location._id : null }, { rating: { $ne: null } });
+      queryObj.$and.push({ employee: Types.ObjectId(req.params.id) }, { rating: { $ne: null } });
       const sort = req.query.sort as string;
 
-      const [[{ feedback: result }], total] = await Promise.all([
+      const [[{ feedback: data }], total] = await Promise.all([
         this.conversationModel
           .aggregate()
           .match(queryObj)
@@ -547,20 +547,20 @@ class EmployeesController {
               },
             ],
           }),
-        this.conversationModel.find(queryObj),
+        this.conversationModel.find({
+          employee: Types.ObjectId(req.params.id),
+          rating: { $ne: null },
+        }),
       ]);
 
-      let data: any = [];
       let isLast;
       let isFirst;
       if (!req.query.cursor || req.query.cursor === 'right') {
-        data = result.slice(0, 5);
         const limiter = this.paginationLimiterRight(total.length, req.query.lastDate);
         isLast = limiter?.isLast;
         isFirst = limiter?.isFirst;
       }
       if (req.query.cursor === 'left') {
-        data = result.slice(-5);
         const limiter = this.paginationLimiterLeft(total.length, req.query.firstDate);
         isLast = limiter?.isLast;
         isFirst = limiter?.isFirst;
