@@ -34,18 +34,29 @@ class EmployeesController {
   async getEmployee(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.user) throw new ErrorHandler(404, 'Cognito user not found');
-      const employee: any = await this.employeeModel.findOne({ email: req.user.email });
+      const employee = await this.employeeModel.findOne({ email: req.user.email });
       if (!employee) throw new ErrorHandler(404, 'Employee not found');
+
+      const employeeObj = employee.toObject();
+      const locationId = Object.values(employeeObj.locations).find(
+        (location) => location.active === true && location.role === 'Employee',
+      )?._id;
+      let location = null;
+
+      if (locationId) {
+        location = await this.locationModel.findById(locationId);
+      }
+
       if (!employee.get('cognito_id')) {
         const updatedEmployee = await this.employeeModel.findOneAndUpdate(
           { email: req.user.email },
           { $set: { cognito_id: req.user.sub } },
           { new: true },
         );
-        res.send(updatedEmployee);
+        res.send({ employee: updatedEmployee, location });
         return;
       }
-      res.send(employee);
+      res.send({ employee, location });
     } catch (error) {
       next(error);
     }
