@@ -34,18 +34,29 @@ class EmployeesController {
   async getEmployee(req: Request, res: Response, next: NextFunction) {
     try {
       if (!req.user) throw new ErrorHandler(404, 'Cognito user not found');
-      const employee: any = await this.employeeModel.findOne({ email: req.user.email });
+      const employee = await this.employeeModel.findOne({ email: req.user.email });
       if (!employee) throw new ErrorHandler(404, 'Employee not found');
+
+      const employeeObj = employee.toObject();
+      const locationId = Object.values(employeeObj.locations).find(
+        (location) => location.active === true && location.role === 'Employee',
+      )?._id;
+      let location = null;
+
+      if (locationId) {
+        location = await this.locationModel.findById(locationId);
+      }
+
       if (!employee.get('cognito_id')) {
         const updatedEmployee = await this.employeeModel.findOneAndUpdate(
           { email: req.user.email },
           { $set: { cognito_id: req.user.sub } },
           { new: true },
         );
-        res.send(updatedEmployee);
+        res.send({ employee: updatedEmployee, location });
         return;
       }
-      res.send(employee);
+      res.send({ employee, location });
     } catch (error) {
       next(error);
     }
@@ -492,10 +503,10 @@ class EmployeesController {
       const queryObj = {
         $and: req.queryObj?.$and.filter((obj: any) => !obj.hasOwnProperty('date') || obj.hasOwnProperty('keyword')),
       };
-      queryObj.$and.push({ location: req.location ? req.location._id : null }, { rating: { $ne: null } });
+      queryObj.$and.push({ employee: Types.ObjectId(req.params.id) }, { rating: { $ne: null } });
       const sort = req.query.sort as string;
 
-      const [[{ feedback: result }], total] = await Promise.all([
+      const [[{ feedback: data }], total] = await Promise.all([
         this.conversationModel
           .aggregate()
           .match(queryObj)
@@ -536,20 +547,20 @@ class EmployeesController {
               },
             ],
           }),
-        this.conversationModel.find(queryObj),
+        this.conversationModel.find({
+          employee: Types.ObjectId(req.params.id),
+          rating: { $ne: null },
+        }),
       ]);
 
-      let data: any = [];
       let isLast;
       let isFirst;
       if (!req.query.cursor || req.query.cursor === 'right') {
-        data = result.slice(0, 5);
         const limiter = this.paginationLimiterRight(total.length, req.query.lastDate);
         isLast = limiter?.isLast;
         isFirst = limiter?.isFirst;
       }
       if (req.query.cursor === 'left') {
-        data = result.slice(-5);
         const limiter = this.paginationLimiterLeft(total.length, req.query.firstDate);
         isLast = limiter?.isLast;
         isFirst = limiter?.isFirst;
