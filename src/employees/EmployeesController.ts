@@ -186,6 +186,7 @@ class EmployeesController {
         isLast = limiter?.isLast;
         isFirst = limiter?.isFirst;
       }
+      const employee = req.employee;
       const reviews = await this.reviewModel
         .find(queryObj)
         .sort({ date: req.query.sort as string })
@@ -194,18 +195,35 @@ class EmployeesController {
         .skip(skip);
       let results = [];
       if (reviews.length !== 0) {
-        results = reviews.map((e: any) => {
-          const el = e.toObject();
-          const name = el.author;
-          const created_at = el.date;
-          delete el.author;
-          delete el.date;
-          return {
-            ...el,
-            name,
-            created_at,
-          };
-        });
+        const lastSeen = employee?.last_seen?.reviews as Date;
+        results = reviews
+          .map((e: any) => {
+            const el = e.toObject();
+            const name = el.author;
+            const created_at = el.date;
+            delete el.author;
+            delete el.date;
+            return {
+              ...el,
+              name,
+              created_at,
+            };
+          })
+          .map((review) => {
+            return {
+              ...review,
+              is_new: !lastSeen || dayjs(lastSeen).isBefore(review.created_at),
+            };
+          });
+
+        if (employee?._id && (!lastSeen || dayjs(lastSeen).isBefore(results[0].created_at))) {
+          await this.employeeModel.findByIdAndUpdate(Types.ObjectId(employee._id), {
+            last_seen: {
+              ...employee.last_seen,
+              reviews: results[0].created_at,
+            },
+          });
+        }
       }
 
       return { results, countNonEyerate, isLast, isFirst };
@@ -271,6 +289,7 @@ class EmployeesController {
   async getReviews(req: Request, res: Response, next: NextFunction) {
     try {
       const locationId = req.location?._id;
+
       if (req.query.platform) {
         if (req.query.platform !== 'Eyerate') {
           const promiseResult = await Promise.all([
@@ -675,7 +694,7 @@ class EmployeesController {
         .sort((a, b) => {
           return b.created_at - a.created_at;
         })
-        .slice(0, 3);
+        .slice(0, 5);
 
       const lRank = leaderboard[0]?.rank !== -1 ? leaderboard[0]?.rank + 1 : 0;
 

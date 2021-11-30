@@ -34,6 +34,16 @@ export const EmployeeSchema: Schema = new Schema(
     plaid_account: {
       type: ObjectId,
     },
+    last_seen: {
+      type: new Schema({
+        reviews: {
+          type: Date,
+        },
+        payments: {
+          type: Date,
+        },
+      }),
+    },
   },
   { collection: 'Employees', timestamps: true },
 );
