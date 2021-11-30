@@ -49,26 +49,23 @@ jobs:
             yarn types
             yarn tsc
             pm2 flush
-            pm2 reload employees-backend
+            pm2 restart employees-backend
+            exit
           '
 
-  postMessage:
-    needs: Deploy
-    runs-on: ubuntu-latest
-    steps:
-    - name: Successful ✅
-      uses: sarisia/actions-status-discord@v1
-      if: ${{ success() }}
-      with:
-        webhook: ${{ secrets.DISCORD_WEBHOOK }}
-        title: "Deployed to Prod"
-    - name: Failed 🚨
-      uses: sarisia/actions-status-discord@v1
-      if: ${{ failure() }}
-      with:
-        webhook: ${{ secrets.DISCORD_WEBHOOK }}
-        title: "FAILED Deploy to Prod"
-        color: 0xff91a4
+      - name: Successful ✅
+        uses: sarisia/actions-status-discord@v1
+        if: ${{ success() }}
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: "Deployed to Prod"
+      - name: Failed 🚨
+        uses: sarisia/actions-status-discord@v1
+        if: ${{ failure() }}
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          title: "FAILED Deploy to Prod"
+          color: 0xff91a4
 
 
 
