@@ -217,7 +217,7 @@ class EmployeesController {
           });
 
         if (employee?._id && (!lastSeen || dayjs(lastSeen).isBefore(results[0].created_at))) {
-          await this.employeeModel.findByIdAndUpdate(Types.ObjectId(employee._id), {
+          await this.employeeModel.findByIdAndUpdate(employee._id, {
             last_seen: {
               ...employee.last_seen,
               reviews: results[0].created_at,
