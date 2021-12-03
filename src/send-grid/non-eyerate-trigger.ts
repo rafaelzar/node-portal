@@ -35,22 +35,25 @@ export const nonEyerateTrigger = () => {
         }
 
         const templateData = {
-          review_text: reviewObj.content,
-          review_rating: reviewObj.rating,
-          review_date: date,
+          date,
+          message: reviewObj.content,
+          rating: reviewObj.rating,
+          employee_name: employeeObj.first_name,
           employee_link: ENV.FE_LINK,
         };
 
         const msg: any = {
-          // dont spam users
-          // to: employeeObj.email,
-          to: 'k7.education.acc@gmail.com',
+          to: employeeObj.email,
           from: ENV.EMAIL_ADDRESS,
           template_id: ENV.EMPLOYEE_TEMPLATE_ID,
           dynamic_template_data: templateData,
         };
 
-        await sgMail.send(msg);
+        if (process.env.NODE_ENV === 'production') {
+          await sgMail.send(msg);
+        } else {
+          console.log(msg);
+        }
       } catch (error) {
         console.log(error);
       }
