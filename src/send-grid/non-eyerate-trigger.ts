@@ -50,7 +50,7 @@ export const nonEyerateTrigger = () => {
         };
 
         if (process.env.NODE_ENV === 'production') {
-          await sgMail.send(msg);
+          // await sgMail.send(msg);
         } else {
           console.log(msg);
         }
