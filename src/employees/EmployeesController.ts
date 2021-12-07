@@ -289,73 +289,19 @@ class EmployeesController {
   async getReviews(req: Request, res: Response, next: NextFunction) {
     try {
       const locationId = req.location?._id;
+      const location = await this.locationModel.findById(locationId);
 
-      if (req.query.platform) {
-        if (req.query.platform !== 'Eyerate') {
-          const promiseResult = await Promise.all([
-            this.getNonEyerateReviews(req, next),
-            this.getNonEyerateStats(req, next),
-          ]);
-          res.send({
-            data: promiseResult[0]?.results,
-            stats: this.averageStats(promiseResult[1] as []),
-            isLast: promiseResult[0]?.isLast,
-            isFirst: promiseResult[0]?.isFirst,
-          });
-        } else {
-          const promiseResult = await Promise.all([this.getEyerateReviews(req, next), this.getEyerateStats(req, next)]);
-          res.send({
-            data: promiseResult[0]?.results,
-            stats: this.averageStats(promiseResult[1] as []),
-            isLast: promiseResult[0]?.isLast,
-            isFirst: promiseResult[0]?.isFirst,
-          });
-        }
-      } else {
-        const promiseResult = await Promise.all([
-          this.getEyerateReviews(req, next),
-          this.getNonEyerateReviews(req, next),
-          this.getEyerateStats(req, next),
-          this.getNonEyerateStats(req, next),
-        ]);
-
-        const res1 = promiseResult[0]?.results;
-        const res2 = promiseResult[1]?.results;
-
-        if (!res1 || !res2) return;
-        const sort = req.query.sort as string;
-        const result = [...res1, ...res2].sort((a, b) => {
-          if (!sort || sort === 'asc') {
-            return a.created_at - b.created_at;
-          } else {
-            return b.created_at - a.created_at;
-          }
-        });
-
-        const location = await this.locationModel.findById(locationId);
-        const countEyerate = promiseResult[0]?.countEyerate as number;
-        const countNonEyerate = promiseResult[1]?.countNonEyerate as number;
-        let data: any = [];
-        let isLast;
-        let isFirst;
-        if (!req.query.cursor || req.query.cursor === 'right') {
-          data = result.slice(0, 5);
-          const limiter = this.paginationLimiterRight(countEyerate + countNonEyerate, req.query.lastDate);
-          isLast = limiter?.isLast;
-          isFirst = limiter?.isFirst;
-        }
-        if (req.query.cursor === 'left') {
-          data = result.slice(-5);
-          const limiter = this.paginationLimiterLeft(countEyerate + countNonEyerate, req.query.firstDate);
-          isLast = limiter?.isLast;
-          isFirst = limiter?.isFirst;
-        }
-
-        const eyerate = (promiseResult[2] || []) as [];
-        const noneyerate = (promiseResult[3] || []) as [];
-        const stats = this.averageStats([...eyerate, ...noneyerate]);
-        res.send({ data, stats, location, isLast, isFirst });
-      }
+      const promiseResult = await Promise.all([
+        this.getNonEyerateReviews(req, next),
+        this.getNonEyerateStats(req, next),
+      ]);
+      res.send({
+        data: promiseResult[0]?.results,
+        stats: this.averageStats(promiseResult[1] as []),
+        isLast: promiseResult[0]?.isLast,
+        isFirst: promiseResult[0]?.isFirst,
+        location,
+      });
     } catch (error) {
       next(error);
     }
@@ -664,17 +610,16 @@ class EmployeesController {
         .project({ _id: 0 });
 
       const reviewStatsAndMentionsProm = this.reviewStatsAndMentions(employeeId, next);
-      const nonEyerateProm = this.getNonEyerateReviews(req, next);
-      const eyerateProm = this.getEyerateReviews(req, next);
+      const reviewMentionsProm = this.getNonEyerateReviews(req, next);
 
       const earningsProm = this.getEarningStats(employeeId, next);
       const feedbackProm = this.getUserFeedback(req, next);
 
       const [
-        [reviewStatsAndMentions, nonEyerate, eyerate, allTimeEarnings, allTimePayments],
+        [reviewStatsAndMentions, reviewMentions, allTimeEarnings, allTimePayments],
         [thisMonthEarnings, thisMonthEarningsUnpaid, prevMonthEarningsUnpaid, leaderboard, earnings, feedback],
       ] = await Promise.all([
-        Promise.all([reviewStatsAndMentionsProm, nonEyerateProm, eyerateProm, allTimeEarningsArr, allTimePaymentsArr]),
+        Promise.all([reviewStatsAndMentionsProm, reviewMentionsProm, allTimeEarningsArr, allTimePaymentsArr]),
         Promise.all([
           thisMonthEarningsArr,
           thisMonthEarningsUnpaidArr,
@@ -684,17 +629,6 @@ class EmployeesController {
           feedbackProm,
         ]),
       ]);
-
-      const nonEyerateRes = (nonEyerate?.results as any[]) || [];
-      const eyerateRes = (eyerate?.results as any[]) || [];
-
-      //merge eyerate and noneyerate reviews and sort them desceding
-
-      const sortedMentions = [...nonEyerateRes, ...eyerateRes]
-        .sort((a, b) => {
-          return b.created_at - a.created_at;
-        })
-        .slice(0, 5);
 
       const lRank = leaderboard[0]?.rank !== -1 ? leaderboard[0]?.rank + 1 : 0;
 
@@ -711,7 +645,7 @@ class EmployeesController {
 
       res.send({
         ...reviewStatsAndMentions,
-        reviewMentions: sortedMentions,
+        reviewMentions: reviewMentions?.results,
         feedbackMentions: feedback?.data,
         earningsStats,
       });
@@ -878,6 +812,8 @@ class EmployeesController {
   // helper methods
 
   averageStats(documentArray: any[]) {
+    documentArray = documentArray || [];
+
     let sumReview = 0;
     let star5 = 0;
     let star4 = 0;
