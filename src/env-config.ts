@@ -33,6 +33,7 @@ if (
 
 export default {
   NODE_ENV: process.env.NODE_ENV,
+  IS_PRODUCTION: process.env.NODE_ENV === 'production',
   APP_PORT: Number(process.env.PORT),
 
   // mongo
@@ -56,4 +57,5 @@ export default {
   //plaid
   PLAID_CLIENT_ID: String(process.env.PLAID_CLIENT_ID),
   PLAID_SECRET: String(process.env.PLAID_SECRET),
+  PLAID_SECRET_PASSPHRASE: String(process.env.PLAID_SECRET_PASSPHRASE),
 };

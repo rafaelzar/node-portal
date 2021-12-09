@@ -13,6 +13,7 @@ import plaidClient from '../plaid/plaid.config';
 import PlaidAccountModel from './models/PlaidAccountModel';
 import LocationModel from './models/LocationModel';
 import crypto from 'crypto-js';
+import ENV from '../env-config';
 import { uploadFileToS3, deleteFileFromS3 } from '../utils/aws';
 
 import fs from 'fs';
@@ -657,7 +658,7 @@ class EmployeesController {
   async createLinkToken(req: Request, res: Response, next: NextFunction) {
     try {
       const { link_token } = await plaidClient.createLinkToken({
-        client_name: 'K7 Tech Edu',
+        client_name: 'EyeRate',
         country_codes: ['US'],
         language: 'en',
         user: {
@@ -674,7 +675,7 @@ class EmployeesController {
   async exchangeToken(req: Request, res: Response, next: NextFunction) {
     try {
       const { access_token } = await plaidClient.exchangePublicToken(req.body.public_token);
-      const encryptedAES = crypto.AES.encrypt(access_token, 'My Secret Passphrase');
+      const encryptedAES = crypto.AES.encrypt(access_token, ENV.PLAID_SECRET_PASSPHRASE);
       const plaidAccount = await this.plaidAccountModel.create({
         employee: Types.ObjectId(req.params.id),
         access_token: encryptedAES,
@@ -697,7 +698,7 @@ class EmployeesController {
         employee: Types.ObjectId(req.params.id),
       });
       if (!plaidAccount) throw new ErrorHandler(404, 'User does not have plaid account');
-      const decryptedBytes = crypto.AES.decrypt(plaidAccount.access_token, 'My Secret Passphrase');
+      const decryptedBytes = crypto.AES.decrypt(plaidAccount.access_token, ENV.PLAID_SECRET_PASSPHRASE);
       const plaintext = decryptedBytes.toString(crypto.enc.Utf8);
       const authResponse: any = await plaidClient.getAuth(plaintext);
       const bankReponse = await plaidClient.getInstitutionById(authResponse.item.institution_id, ['US']);
@@ -800,7 +801,7 @@ class EmployeesController {
         { new: true },
       );
       if (!employee) throw new ErrorHandler(400, 'Employee not updated');
-      const decryptedBytes = crypto.AES.decrypt(plaidAccount.access_token, 'My Secret Passphrase');
+      const decryptedBytes = crypto.AES.decrypt(plaidAccount.access_token, ENV.PLAID_SECRET_PASSPHRASE);
       const plaintext = decryptedBytes.toString(crypto.enc.Utf8);
       await plaidClient.removeItem(plaintext);
       res.send({ employee });

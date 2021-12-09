@@ -4,7 +4,7 @@ import ENV from '../env-config';
 const plaidClient = new plaid.Client({
   clientID: ENV.PLAID_CLIENT_ID,
   secret: ENV.PLAID_SECRET,
-  env: plaid.environments.sandbox,
+  env: ENV.IS_PRODUCTION ? plaid.environments.production : plaid.environments.sandbox,
   options: {},
 });
 

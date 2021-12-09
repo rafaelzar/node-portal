@@ -43,7 +43,7 @@ export const eyerateTrigger = () => {
           dynamic_template_data: templateData,
         };
 
-        if (process.env.NODE_ENV === 'production') {
+        if (ENV.IS_PRODUCTION) {
           // await sgMail.send(msg);
         } else {
           console.log(msg);
