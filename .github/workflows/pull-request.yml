@@ -8,25 +8,28 @@ jobs:
   postMessage:
     runs-on: ubuntu-latest
     steps:
-    - name: runTime
-      run: echo ${{ github.event.action }}
-    - name: opened
-      if: ${{ github.event.action == 'opened' }}
-      uses: sarisia/actions-status-discord@v1
-      with:
-        webhook: ${{ secrets.DISCORD_WEBHOOK_PULL_REQUEST }}
-        title: "OPENED Pull Request"
-        color: 0xFF5733
-    - name: closed
-      if: ${{ github.event.action == 'closed' }}
-      uses: sarisia/actions-status-discord@v1
-      with:
-        webhook: ${{ secrets.DISCORD_WEBHOOK_PULL_REQUEST }}
-        title: "CLOSED Pull Request"
-    - name: reopened
-      if: ${{ github.event.action == 'reopened' }}
-      uses: sarisia/actions-status-discord@v1
-      with:
-        webhook: ${{ secrets.DISCORD_WEBHOOK_PULL_REQUEST }}
-        title: "RE-OPENED Pull Request"
-        color: 0xff91a4
+      - name: runTime
+        run: echo ${{ github.event.action }}
+      - name: opened
+        if: ${{ github.event.action == 'opened' }}
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_PULL_REQUEST }}
+          title: "OPENED Pull Request: ${{ github.repository }} - ${{ github.ref_name }} branch"
+          noprefix: true
+          color: 0xFF5733
+      - name: closed
+        if: ${{ github.event.action == 'closed' }}
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_PULL_REQUEST }}
+          title: "CLOSED Pull Request: ${{ github.repository }} - ${{ github.ref_name }} branch"
+          noprefix: true
+      - name: reopened
+        if: ${{ github.event.action == 'reopened' }}
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_PULL_REQUEST }}
+          title: "RE-OPENED Pull Request: ${{ github.repository }} - ${{ github.ref_name }} branch"
+          noprefix: true
+          color: 0xff91a4
