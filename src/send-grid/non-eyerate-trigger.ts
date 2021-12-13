@@ -14,10 +14,14 @@ export const nonEyerateTrigger = () => {
     if (doc.operationType === 'insert') {
       try {
         const mention: Mention = doc.fullDocument;
+        if (!mention.employee) return;
 
         const location = await LocationModel.findOne({ _id: mention.location });
-        const city = location?.toObject().address.city;
+        const locationObj = location?.toObject();
 
+        if (!locationObj || !locationObj.features.employeeApp) return;
+
+        const city = locationObj.address.city;
         const employee = await EmployeeModel.findOne({ _id: mention.employee });
         const review = await ReviewModel.findOne({ _id: mention.review });
         const employeeObj = employee?.toObject();

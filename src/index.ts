@@ -3,6 +3,7 @@ import ENV from './env-config';
 import App from './App';
 import { nonEyerateTrigger } from './send-grid/non-eyerate-trigger';
 import { eyerateTrigger } from './send-grid/eyerate-trigger';
+import { reviewsTrigger } from './send-grid/reviews-trigger';
 
 const mongoString = ENV.APP_DB_URI;
 const mongoOptions: ConnectOptions = {
@@ -22,6 +23,7 @@ mongoose
   .then(() => {
     nonEyerateTrigger();
     eyerateTrigger();
+    reviewsTrigger();
     const myApp = App.getInstance();
     myApp.listen(ENV.APP_PORT);
   })
