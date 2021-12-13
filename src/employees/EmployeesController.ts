@@ -871,19 +871,23 @@ class EmployeesController {
   }
 
   async getLeaderboard(req: Request, res: Response, next: NextFunction) {
-    const isActiveLocation = (location: LocationPermissions[string]) =>
-      location.active === true && location.role === 'Employee';
-
     const location = req.location;
 
     const [{ topMentions }] = await this.mentionModel
       .aggregate()
       .match({
         location: location?._id,
+        review: { $ne: null },
       })
       .facet({
         topMentions: [
-          { $group: { _id: '$employee', mentions: { $sum: 1 } } },
+          {
+            $group: {
+              _id: '$employee',
+              mentions: { $sum: 1 },
+              reviews: { $push: '$review' },
+            },
+          },
           {
             $sort: {
               mentions: -1,
@@ -903,10 +907,6 @@ class EmployeesController {
       })
     ).map((employee) => employee.toObject());
 
-    const employeesLocationsIds = employees
-      .map((employee) => Object.values(employee.locations).find(isActiveLocation)?._id)
-      .filter(Boolean);
-
     const payments = (
       await this.paymentModel.find({
         employee: { $in: employeesIds },
@@ -914,35 +914,29 @@ class EmployeesController {
       })
     ).map((payment) => payment.toObject());
 
-    const [{ avgSmsRating }] = await this.conversationModel
-      .aggregate()
-      .match({
-        location: { $in: employeesLocationsIds },
-        rating: { $ne: null },
-      })
-      .facet({
-        avgSmsRating: [{ $group: { _id: '$location', rating: { $avg: '$rating' } } }],
-      });
+    const leaderboard = await Promise.all(
+      topMentions.map(
+        async ({ _id, mentions, reviews }: { _id: Types.ObjectId; mentions: number; reviews: Types.ObjectId[] }) => {
+          const employeeId = _id.toString();
+          const employee = employees.find((employee) => employee._id.toString() === employeeId)!;
+          const employeeReviews = await this.reviewModel.find({
+            _id: { $in: reviews },
+          });
 
-    const leaderboard = topMentions.map(({ _id, mentions }: { _id: string; mentions: number }) => {
-      const employee = employees.find((employee) => employee._id.toString() === _id.toString())!;
-
-      return {
-        employee,
-        mentions,
-        earned: +payments
-          .filter((payment) => payment.employee.toString() === _id.toString())
-          .reduce((result, current) => result + current.amount, 0)
-          .toFixed(0),
-        rating: +avgSmsRating
-          .find(({ _id }: { _id: string; rating: number }) =>
-            Object.values(employee.locations).some(
-              (location) => location._id.toString() === _id.toString() && isActiveLocation(location),
-            ),
-          )
-          ?.rating?.toFixed(2),
-      };
-    });
+          return {
+            employee,
+            mentions,
+            earned: +payments
+              .filter((payment) => payment.employee.toString() === employeeId)
+              .reduce((result, current) => result + current.amount, 0)
+              .toFixed(0),
+            rating: (
+              employeeReviews.reduce((result, review) => result + review.get('rating'), 0) / reviews.length
+            ).toFixed(2),
+          };
+        },
+      ),
+    );
 
     res.send(leaderboard);
   }
