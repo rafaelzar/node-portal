@@ -548,100 +548,37 @@ class EmployeesController {
       const employeeId = req.params.id;
       const location = req.location;
 
-      const leaderboardProm = this.mentionModel
-        .aggregate()
-        .match({
-          location: location?._id,
-        })
-        .facet({
-          allTimeMentions: [
-            { $group: { _id: '$employee', mentions: { $sum: 1 } } },
-            {
-              $sort: {
-                mentions: -1,
-              },
-            },
-          ],
-        })
-        .project({ rank: { $indexOfArray: ['$allTimeMentions._id', Types.ObjectId(employeeId)] } });
-
-      const allTimeEarningsArr = this.paymentModel
+      const earningsProm = this.mentionModel
         .aggregate()
         .match({ employee: Types.ObjectId(employeeId) })
-        .group({ _id: { employeeId: '$employee' }, allTimeEarnings: { $sum: '$amount' } })
-        .project({ _id: 0 });
-
-      const allTimePaymentsArr = this.paymentModel
-        .aggregate()
-        .match({ employee: Types.ObjectId(employeeId), check_id: { $ne: null } })
-        .group({ _id: { employeeId: '$employee' }, allTimePayments: { $sum: '$amount' } })
-        .project({ _id: 0 });
-
-      const thisMonth = dayjs();
-      const thisMonthEarningsArr = this.paymentModel
-        .aggregate()
-        .match({
-          employee: Types.ObjectId(employeeId),
-          'payment_period.year': thisMonth.year(),
-          'payment_period.month': thisMonth.month() + 1,
-        })
-        .group({ _id: { employeeId: '$employee' }, thisMonthEarnings: { $sum: '$amount' } })
-        .project({ _id: 0 });
-      const thisMonthEarningsUnpaidArr = this.paymentModel
-        .aggregate()
-        .match({
-          employee: Types.ObjectId(employeeId),
-          'payment_period.year': thisMonth.year(),
-          'payment_period.month': thisMonth.month() + 1,
-          check_id: null,
-        })
-        .group({ _id: { employeeId: '$employee' }, thisMonthEarningsUnpaid: { $sum: '$amount' } })
-        .project({ _id: 0 });
-
-      const prevMonth = thisMonth.add(-1, 'month');
-      const prevMonthEarningsUnpaidArr = this.paymentModel
-        .aggregate()
-        .match({
-          employee: Types.ObjectId(employeeId),
-          'payment_period.year': prevMonth.year(),
-          'payment_period.month': prevMonth.month() + 1,
-          check_id: null,
-        })
-        .group({ _id: { employeeId: '$employee' }, prevMonthEarningsUnpaid: { $sum: '$amount' } })
-        .project({ _id: 0 });
+        .facet({
+          allTimeEarnings: [{ $group: { _id: '$employee', allTimeEarnings: { $sum: '$amount' } } }],
+          paidOut: [
+            { $match: { payment: { $ne: null } } },
+            { $group: { _id: '$employee', paidOut: { $sum: '$amount' } } },
+          ],
+        });
 
       const reviewStatsAndMentionsProm = this.reviewStatsAndMentions(employeeId, next);
       const reviewMentionsProm = this.getNonEyerateReviews(req, next);
 
-      const earningsProm = this.getEarningStats(employeeId, next);
       const feedbackProm = this.getUserFeedback(req, next);
 
-      const [
-        [reviewStatsAndMentions, reviewMentions, allTimeEarnings, allTimePayments],
-        [thisMonthEarnings, thisMonthEarningsUnpaid, prevMonthEarningsUnpaid, leaderboard, earnings, feedback],
-      ] = await Promise.all([
-        Promise.all([reviewStatsAndMentionsProm, reviewMentionsProm, allTimeEarningsArr, allTimePaymentsArr]),
-        Promise.all([
-          thisMonthEarningsArr,
-          thisMonthEarningsUnpaidArr,
-          prevMonthEarningsUnpaidArr,
-          leaderboardProm,
-          earningsProm,
-          feedbackProm,
-        ]),
+      const [reviewStatsAndMentions, reviewMentions, earnings, feedback] = await Promise.all([
+        reviewStatsAndMentionsProm,
+        reviewMentionsProm,
+        earningsProm,
+        feedbackProm,
       ]);
 
-      const lRank = leaderboard[0]?.rank !== -1 ? leaderboard[0]?.rank + 1 : 0;
+      const allTimeEarnings = earnings[0]?.allTimeEarnings[0]?.allTimeEarnings ?? 0;
+      const paidOut = earnings[0]?.paidOut[0]?.paidOut ?? 0;
+      const rollOver = allTimeEarnings - paidOut;
 
       const earningsStats = {
-        earningsAvailable: earnings?.earningsAvailable,
-        lastPayment: earnings?.lastPayment,
-        allTimeEarnings: allTimeEarnings[0]?.allTimeEarnings || 0,
-        allTimePayments: allTimePayments[0]?.allTimePayments || 0,
-        thisMonthEarnings: thisMonthEarnings[0]?.thisMonthEarnings || 0,
-        thisMonthEarningsUnpaid: thisMonthEarningsUnpaid[0]?.thisMonthEarningsUnpaid || 0,
-        prevMonthEarningsUnpaid: prevMonthEarningsUnpaid[0]?.prevMonthEarningsUnpaid || 0,
-        leaderboardRank: lRank,
+        allTimeEarnings,
+        paidOut,
+        rollOver,
       };
 
       res.send({
@@ -877,7 +814,6 @@ class EmployeesController {
       .aggregate()
       .match({
         location: location?._id,
-        review: { $ne: null },
       })
       .facet({
         topMentions: [
@@ -885,6 +821,7 @@ class EmployeesController {
             $group: {
               _id: '$employee',
               mentions: { $sum: 1 },
+              earned: { $sum: '$amount' },
               reviews: { $push: '$review' },
             },
           },
@@ -907,16 +844,19 @@ class EmployeesController {
       })
     ).map((employee) => employee.toObject());
 
-    const payments = (
-      await this.paymentModel.find({
-        employee: { $in: employeesIds },
-        'events.status': 'PAID',
-      })
-    ).map((payment) => payment.toObject());
-
     const leaderboard = await Promise.all(
       topMentions.map(
-        async ({ _id, mentions, reviews }: { _id: Types.ObjectId; mentions: number; reviews: Types.ObjectId[] }) => {
+        async ({
+          _id,
+          mentions,
+          earned,
+          reviews,
+        }: {
+          _id: Types.ObjectId;
+          mentions: number;
+          earned: number;
+          reviews: Types.ObjectId[];
+        }) => {
           const employeeId = _id.toString();
           const employee = employees.find((employee) => employee._id.toString() === employeeId)!;
           const employeeReviews = await this.reviewModel.find({
@@ -926,10 +866,7 @@ class EmployeesController {
           return {
             employee,
             mentions,
-            earned: +payments
-              .filter((payment) => payment.employee.toString() === employeeId)
-              .reduce((result, current) => result + current.amount, 0)
-              .toFixed(0),
+            earned: +earned.toFixed(0),
             rating: (
               employeeReviews.reduce((result, review) => result + review.get('rating'), 0) / reviews.length
             ).toFixed(2),
