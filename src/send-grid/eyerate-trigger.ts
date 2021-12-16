@@ -13,14 +13,9 @@ export const eyerateTrigger = () => {
       try {
         const conversation: Conversation = doc.fullDocument;
         if (!conversation.employee) return;
-
-        const location = await LocationModel.findOne({ _id: conversation.location });
-        const locationObj = location?.toObject();
-
-        if (!locationObj || !locationObj.features.employeeApp) return;
-
-        const city = locationObj.address.city;
         const employee = await EmployeeModel.findOne({ _id: conversation.employee });
+        const location = await LocationModel.findOne({ _id: conversation.location });
+        const city = location?.toObject().address.city;
         const employeeObj = employee?.toObject();
         if (!employeeObj?.email || !conversation.rating) return;
         let date: string;
