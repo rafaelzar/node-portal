@@ -731,9 +731,9 @@
     "@types/qs" "*"
     "@types/serve-static" "*"
 
-"@types/eyerate@ssh://git@github.com/eyerate/types":
+"@types/eyerate@https://github.com/eyerate/types":
   version "1.0.0"
-  resolved "ssh://git@github.com/eyerate/types#f3d2dc80fe63c590411fc973a3e2c0e8907cfff5"
+  resolved "https://github.com/eyerate/types#f3d2dc80fe63c590411fc973a3e2c0e8907cfff5"
   dependencies:
     "@types/mongodb" "^3.6.20"
 
